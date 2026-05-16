@@ -11,9 +11,29 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+
+  # Existing
   flutter_dotenv: ^5.1.0
   image_picker: ^1.0.10
   supabase_flutter: ^1.10.25
+
+  # Design System
+  shadcn_flutter: ^0.0.52
+  flex_color_scheme: ^8.4.0
+  google_fonts: ^6.2.1
+
+  # Animation
+  flutter_animate: ^4.5.0
+  rive: ^0.13.16
+  lottie: ^3.1.2
+  animations: ^2.0.0
+
+  # UI Utilities
+  fl_chart: ^0.69.0
+  shimmer: ^3.0.0
+  gap: ^3.0.1
+  phosphor_flutter: any
+  cached_network_image: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +44,5 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/lottie/
+    - assets/rive/
