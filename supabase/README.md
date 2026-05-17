@@ -1,5 +1,7 @@
 # Supabase Database Setup
 
+**Migration order**: see [MIGRATIONS.md](./MIGRATIONS.md) before applying files manually.
+
 This directory contains the complete database schema, RLS policies, and seed data for the Relaxed Living Valet application.
 
 ## Database Structure

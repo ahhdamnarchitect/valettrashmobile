@@ -1,0 +1,13 @@
+---
+description: Enforce code quality and maintainability
+alwaysApply: true
+---
+
+- Prefer simple, readable, modular solutions
+- Follow existing repo patterns unless there is a clear reason to improve them
+- Avoid unnecessary complexity
+- Keep functions focused
+- Keep naming explicit
+- Add comments only where they improve clarity
+- When touching code, leave it slightly cleaner than you found it
+- If risky changes are made, document them in the brain files

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PropertyManagerDashboardScreen extends StatefulWidget {
@@ -92,7 +92,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -204,7 +204,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -246,7 +246,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                     Row(
                       children: [
                         Expanded(
-                          child: _buildMetricCard('Total Units', '$_totalUnits', Icons.door_front),
+                          child: _buildMetricCard('Total Units', '$_totalUnits', Icons.meeting_room),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -282,7 +282,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -424,7 +424,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -500,7 +500,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -576,7 +576,7 @@ class _PropertyManagerDashboardScreenState extends State<PropertyManagerDashboar
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

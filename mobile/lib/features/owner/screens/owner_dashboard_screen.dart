@@ -1,10 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/app_theme.dart';
-import '../../../core/brand_colors.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/glow_badge.dart';
+import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/role_bottom_nav.dart';
+import '../../../core/widgets/role_hero_card.dart';
+import '../../../core/widgets/skeleton_card.dart';
+import '../../../core/widgets/stat_tile.dart';
 import '../../manager/screens/manager_dashboard_screen.dart';
-import '../../worker/screens/worker_dashboard_screen.dart';
+import '../../manager/screens/property_manager_dashboard_new.dart';
+import '../../manager/screens/simple_notification_sender_screen.dart';
 import '../../resident/screens/resident_dashboard_screen.dart';
+import '../../worker/screens/worker_dashboard_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -14,58 +22,146 @@ class OwnerDashboardScreen extends StatefulWidget {
 }
 
 class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
-  String _email = 'No user signed in';
-  
-  // Mock data for MVP
-  int _totalProperties = 3;
-  int _totalUnits = 156;
-  int _totalVerifiedResidents = 142;
-  int _inviteCodesIssued = 89;
-  int _inviteCodesUsed = 67;
-  int _unclaimedUnits = 14;
-  int _newResidentsThisMonth = 8;
+  int _tabIndex = 0;
+  bool _loading = true;
+  String? _error;
+  String _email = '';
 
-  // Mock property data
-  List<Map<String, dynamic>> _properties = [
-    {
-      'id': '1',
-      'name': 'Sunset Apartments',
-      'total_units': 60,
-      'verified_residents': 55,
-      'unclaimed_units': 5,
-      'new_this_month': 3,
-    },
-    {
-      'id': '2',
-      'name': 'Ocean View Condos',
-      'total_units': 48,
-      'verified_residents': 44,
-      'unclaimed_units': 4,
-      'new_this_month': 2,
-    },
-    {
-      'id': '3',
-      'name': 'Riverside Complex',
-      'total_units': 48,
-      'verified_residents': 43,
-      'unclaimed_units': 5,
-      'new_this_month': 3,
-    },
-  ];
+  List<Map<String, dynamic>> _properties = [];
+
+  AppColorsScheme _c = AppColorsScheme.dark;
+
+  int get _totalProperties => _properties.length;
+  int get _totalUnits =>
+      _properties.fold(0, (s, p) => s + (p['unit_count'] as int? ?? 0));
+  int get _totalResidents =>
+      _properties.fold(0, (s, p) => s + (p['resident_count'] as int? ?? 0));
+  int get _totalInvitesIssued =>
+      _properties.fold(0, (s, p) => s + (p['invite_count'] as int? ?? 0));
+  int get _totalInvitesUsed =>
+      _properties.fold(0, (s, p) => s + (p['claimed_count'] as int? ?? 0));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _c = context.roleColors;
+  }
 
   @override
   void initState() {
     super.initState();
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      _email = user.email ?? user.id;
+    _email = Supabase.instance.client.auth.currentUser?.email ?? '';
+    _loadData();
+  }
+
+  Future<int> _unitCountForProperty(String propertyId) async {
+    final client = Supabase.instance.client;
+    final buildings = await client
+        .from('buildings')
+        .select('id')
+        .eq('property_id', propertyId);
+    final buildingIds = (buildings as List)
+        .map((b) => b['id']?.toString())
+        .whereType<String>()
+        .toList();
+    if (buildingIds.isEmpty) return 0;
+
+    final floors = await client
+        .from('floors')
+        .select('id')
+        .filter('building_id', 'in', '(${buildingIds.join(',')})');
+    final floorIds = (floors as List)
+        .map((f) => f['id']?.toString())
+        .whereType<String>()
+        .toList();
+    if (floorIds.isEmpty) return 0;
+
+    final units = await client
+        .from('units')
+        .select('id')
+        .filter('floor_id', 'in', '(${floorIds.join(',')})')
+        .eq('is_active', true);
+    return (units as List).length;
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final client = Supabase.instance.client;
+
+    try {
+      final propsRows = await client
+          .from('properties')
+          .select(
+              'id, name, service_window_start, service_window_end, is_active, city, state')
+          .eq('is_active', true)
+          .order('name');
+
+      final rows = List<Map<String, dynamic>>.from(propsRows as List);
+      final List<Map<String, dynamic>> properties = [];
+
+      await Future.wait(rows.map((prop) async {
+        final propId = prop['id']?.toString() ?? '';
+        final propName = prop['name']?.toString() ?? '';
+
+        final results = await Future.wait(<Future<dynamic>>[
+          client
+              .from('resident_units')
+              .select('id')
+              .eq('property_id', propId)
+              .eq('is_active', true),
+          client
+              .from('invite_codes')
+              .select('id, assigned_user_id')
+              .eq('property_id', propId),
+          _unitCountForProperty(propId),
+        ]);
+
+        final residentCount = (results[0] as List).length;
+        final invites = List<Map<String, dynamic>>.from(results[1] as List);
+        final unitCount = results[2] as int;
+        final claimedCount =
+            invites.where((i) => i['assigned_user_id'] != null).length;
+
+        final sw = prop['service_window_start'] ?? '18:00';
+        final ew = prop['service_window_end'] ?? '22:00';
+
+        properties.add({
+          'id': propId,
+          'name': propName,
+          'location': '${prop['city'] ?? ''}, ${prop['state'] ?? ''}',
+          'service_window': '${_fmtTime(sw)} – ${_fmtTime(ew)}',
+          'unit_count': unitCount,
+          'resident_count': residentCount,
+          'invite_count': invites.length,
+          'claimed_count': claimedCount,
+          'unclaimed_count': unitCount - residentCount,
+        });
+      }));
+
+      properties.sort(
+          (a, b) => (a['name'] as String).compareTo(b['name'] as String));
+
+      setState(() => _properties = properties);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+  String _fmtTime(dynamic t) {
+    if (t == null) return '--';
+    final parts = t.toString().split(':');
+    if (parts.length < 2) return t.toString();
+    final h = int.tryParse(parts[0]) ?? 0;
+    final m = int.tryParse(parts[1]) ?? 0;
+    final ap = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12;
+    if (h12 == 0) h12 = 12;
+    return '$h12:${m.toString().padLeft(2, '0')} $ap';
   }
 
   Future<void> _signOut() async {
@@ -74,547 +170,607 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Owner Dashboard'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: _signOut,
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
+      backgroundColor: _c.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: _buildTab()),
+            RoleBottomNav(
+              currentIndex: _tabIndex,
+              onTap: (i) => setState(() => _tabIndex = i),
+              accent: AppColors.owner,
+              items: const [
+                RoleNavItem(
+                  icon: Icons.dashboard_outlined,
+                  activeIcon: Icons.dashboard,
+                  label: 'Overview',
+                ),
+                RoleNavItem(
+                  icon: Icons.apartment_outlined,
+                  activeIcon: Icons.apartment,
+                  label: 'Properties',
+                ),
+                RoleNavItem(
+                  icon: Icons.bar_chart_outlined,
+                  activeIcon: Icons.bar_chart,
+                  label: 'Analytics',
+                ),
+                RoleNavItem(
+                  icon: Icons.settings_outlined,
+                  activeIcon: Icons.settings,
+                  label: 'Settings',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab() {
+    switch (_tabIndex) {
+      case 0:
+        return _buildOverviewTab();
+      case 1:
+        return _buildPropertiesTab();
+      case 2:
+        return _buildAnalyticsTab();
+      default:
+        return _buildSettingsTab();
+    }
+  }
+
+  // ── Overview tab ──────────────────────────────────────────────────────────────
+
+  Widget _buildOverviewTab() {
+    if (_loading) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        children: [
+          SkeletonCard(height: 128),
+          SizedBox(height: 12),
+          SkeletonCard(height: 60),
+          SizedBox(height: 16),
+          SkeletonCard(height: 110),
+          SizedBox(height: 16),
+          SkeletonCard(height: 110),
+        ],
+      );
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: TextStyle(color: _c.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            TextButton(onPressed: _loadData, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+    final activationRate = _totalUnits > 0
+        ? '${(_totalResidents / _totalUnits * 100).toStringAsFixed(1)}%'
+        : '—';
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: AppColors.owner,
+      backgroundColor: _c.surface1,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        children: [
+          RoleHeroCard(
+            accent: AppColors.owner,
+            eyebrow: 'PORTFOLIO',
+            title:
+                '$_totalProperties Propert${_totalProperties == 1 ? 'y' : 'ies'}',
+            subtitle:
+                '$_totalResidents residents · $_totalUnits units · $activationRate activation',
+            badgeLabel: 'Owner',
+            showDot: false,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              StatTile(value: '$_totalProperties', label: 'Properties'),
+              const SizedBox(width: 8),
+              StatTile(value: '$_totalUnits', label: 'Units'),
+              const SizedBox(width: 8),
+              StatTile(value: '$_totalResidents', label: 'Residents'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              StatTile(value: '$_totalInvitesIssued', label: 'Codes Issued'),
+              const SizedBox(width: 8),
+              StatTile(
+                value: '$_totalInvitesUsed',
+                label: 'Codes Used',
+                valueColor: AppColors.success,
+              ),
+              const SizedBox(width: 8),
+              StatTile(value: activationRate, label: 'Activation'),
+            ],
+          ),
+          if (_properties.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const _OwnerSectionLabel(text: 'PROPERTIES AT A GLANCE'),
+            const SizedBox(height: 10),
+            ..._properties.take(3).map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _buildCompactPropertyCard(p),
+                )),
+            if (_properties.length > 3) ...[
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => setState(() => _tabIndex = 1),
+                  child: Text(
+                    'View all ${_properties.length} properties →',
+                    style: TextStyle(color: AppColors.owner),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactPropertyCard(Map<String, dynamic> p) {
+    final units = p['unit_count'] as int? ?? 0;
+    final residents = p['resident_count'] as int? ?? 0;
+    final pct = units > 0
+        ? '${(residents / units * 100).toStringAsFixed(0)}%'
+        : '0%';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _c.surface1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _c.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.owner.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.apartment_outlined,
+                size: 18, color: AppColors.owner),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  p['name']?.toString() ?? 'Property',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _c.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$residents / $units residents',
+                  style: TextStyle(
+                      fontSize: 11, color: _c.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          GlowBadge(
+            label: pct,
+            accent: AppColors.owner,
+            showDot: false,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            // Portfolio Overview Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: BrandColors.primaryBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.business,
-                            color: BrandColors.primaryBlue,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Text(
-                            'Portfolio Overview',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildMetricCard(
-                            'Total Properties',
-                            '$_totalProperties',
-                            Icons.apartment,
-                            BrandColors.primaryBlue,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildMetricCard(
-                            'Total Units',
-                            '$_totalUnits',
-                            Icons.home,
-                            BrandColors.primaryBlue,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildMetricCard(
-                            'Verified Residents',
-                            '$_totalVerifiedResidents',
-                            Icons.people,
-                            Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildMetricCard(
-                            'Invite Codes Issued',
-                            '$_inviteCodesIssued',
-                            Icons.vpn_key,
-                            Colors.orange,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildMetricCard(
-                            'Invite Codes Used',
-                            '$_inviteCodesUsed',
-                            Icons.vpn_key_outlined,
-                            Colors.cyan,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildMetricCard(
-                            'Unclaimed Units',
-                            '$_unclaimedUnits',
-                            Icons.home_work,
-                            Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildMetricCard(
-                            'New Residents (This Month)',
-                            '$_newResidentsThisMonth',
-                            Icons.trending_up,
-                            Colors.teal,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Spacer(),
-                        const Spacer(),
-                      ],
-                    ),
-                  ],
+    );
+  }
+
+  // ── Properties tab ────────────────────────────────────────────────────────────
+
+  Widget _buildPropertiesTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'All Properties',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: _c.textPrimary,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
+              GlowBadge(
+                label: '$_totalProperties total',
+                accent: AppColors.owner,
+                showDot: false,
+              ),
+            ],
+          ),
+        ),
+        if (_loading)
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                SkeletonCard(height: 160),
+                SizedBox(height: 12),
+                SkeletonCard(height: 160),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Property Details Section
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          )
+        else if (_properties.isEmpty)
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.apartment_outlined,
+                      size: 56, color: _c.textMuted),
+                  SizedBox(height: 16),
+                  Text(
+                    'No properties found',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: _c.textPrimary),
                   ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.indigo.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.location_city,
-                            color: Colors.indigo.shade700,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Text(
-                            'Property Details',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ..._properties.map((property) => Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  property['name'],
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: BrandColors.gray,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.green.shade200),
-                                ),
-                                child: Text(
-                                  '${((property['verified_residents'] / property['total_units']) * 100).toStringAsFixed(1)}%',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: BrandColors.primaryBlack,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildPropertyStat(
-                                  'Total Units',
-                                  property['total_units'].toString(),
-                                  Icons.home,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildPropertyStat(
-                                  'Verified Residents',
-                                  property['verified_residents'].toString(),
-                                  Icons.people,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildPropertyStat(
-                                  'Unclaimed Units',
-                                  property['unclaimed_units'].toString(),
-                                  Icons.home_work,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildPropertyStat(
-                                  'New This Month',
-                                  property['new_this_month'].toString(),
-                                  Icons.trending_up,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    )),
-                  ],
-                ),
+            ),
+          )
+        else
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadData,
+              color: AppColors.owner,
+              backgroundColor: _c.surface1,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                itemCount: _properties.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) =>
+                    _buildFullPropertyCard(_properties[i]),
               ),
             ),
+          ),
+      ],
+    );
+  }
 
-            const SizedBox(height: 24),
+  Widget _buildFullPropertyCard(Map<String, dynamic> p) {
+    final units = p['unit_count'] as int? ?? 0;
+    final residents = p['resident_count'] as int? ?? 0;
+    final claimed = p['claimed_count'] as int? ?? 0;
+    final issued = p['invite_count'] as int? ?? 0;
+    final pct = units > 0 ? residents / units : 0.0;
+    final location = p['location'] as String? ?? '';
+    final hasLocation = location.trim().isNotEmpty && location.trim() != ',';
 
-            // Resident Onboarding Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.teal.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.how_to_reg,
-                            color: Colors.teal.shade700,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Text(
-                            'Resident Onboarding',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ..._properties.map((property) => Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.teal.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            property['name'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildOnboardingItem(
-                                  'Activation Rate',
-                                  '${((property['verified_residents'] / property['total_units']) * 100).toStringAsFixed(1)}%',
-                                  Colors.green,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildOnboardingItem(
-                                  'Pending Activation',
-                                  property['unclaimed_units'].toString(),
-                                  Colors.orange,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Owner Notifications Section
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: BrandColors.primaryBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.notifications_active,
-                            color: BrandColors.primaryBlue,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Text(
-                            'Owner Notifications',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Recent Activity',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '• Admin added 3 residents to Sunset Apartments\n'
-                            '• Manager assigned 2 workers to Ocean View Condos\n'
-                            '• 5 new invite codes generated for Riverside Complex\n'
-                            '• 8 residents activated this week across all properties',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: BrandColors.gray,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Navigation Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.surface1,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.owner.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Executive Navigation',
+                      p['name']?.toString() ?? 'Property',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w700,
+                        color: _c.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ManagerDashboardScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.admin_panel_settings, size: 18),
-                            label: const Text('Manager Dashboard'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade600,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const WorkerDashboardScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.work, size: 18),
-                            label: const Text('Worker Dashboard'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.shade600,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ResidentDashboardScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.home, size: 18),
-                            label: const Text('Resident Dashboard'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade600,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    if (hasLocation) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        location,
+                        style: TextStyle(
+                            fontSize: 12, color: _c.textSecondary),
+                      ),
+                    ],
                   ],
                 ),
+              ),
+              GlowBadge(
+                label:
+                    '${(pct * 100).toStringAsFixed(0)}% active',
+                accent: pct >= 0.5 ? AppColors.success : AppColors.warning,
+                showDot: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _ownerMiniStat('$units', 'Units', AppColors.info),
+              const SizedBox(width: 8),
+              _ownerMiniStat('$residents', 'Residents', AppColors.owner),
+              const SizedBox(width: 8),
+              _ownerMiniStat('$claimed/$issued', 'Codes', AppColors.warning),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.access_time_outlined,
+                  size: 13, color: _c.textMuted),
+              const SizedBox(width: 4),
+              Text(
+                p['service_window']?.toString() ?? '--',
+                style: TextStyle(
+                    fontSize: 11, color: _c.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SimpleNotificationSenderScreen(
+                    initialPropertyId: p['id']?.toString(),
+                    initialMode: 'property',
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.campaign_outlined, size: 16),
+              label: const Text('Alert All Residents'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.owner,
+                side: BorderSide(color: AppColors.owner.withValues(alpha: 0.4)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Analytics tab ─────────────────────────────────────────────────────────────
+
+  Widget _buildAnalyticsTab() {
+    if (_loading) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        children: [
+          SkeletonCard(height: 200),
+          SizedBox(height: 16),
+          SkeletonCard(height: 160),
+        ],
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      children: [
+        RoleHeroCard(
+          accent: AppColors.owner,
+          eyebrow: 'ANALYTICS',
+          title: 'Portfolio Metrics',
+          subtitle: 'Occupancy and activation across all properties',
+          badgeLabel: 'Owner',
+          showDot: false,
+        ),
+        const SizedBox(height: 20),
+        const _OwnerSectionLabel(text: 'OCCUPANCY BY PROPERTY'),
+        const SizedBox(height: 12),
+        if (_properties.isEmpty)
+          Center(
+            child: Text(
+              'No data yet',
+              style:
+                  TextStyle(fontSize: 14, color: _c.textSecondary),
+            ),
+          )
+        else
+          ..._properties.map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildOccupancyBar(p),
+              )),
+        const SizedBox(height: 20),
+        const _OwnerSectionLabel(text: 'CODE ACTIVATION RATE'),
+        const SizedBox(height: 12),
+        _buildActivationSummary(),
+      ],
+    );
+  }
+
+  Widget _buildOccupancyBar(Map<String, dynamic> p) {
+    final units = p['unit_count'] as int? ?? 0;
+    final residents = p['resident_count'] as int? ?? 0;
+    final pct = units > 0 ? residents / units : 0.0;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _c.surface1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  p['name']?.toString() ?? 'Property',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _c.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                '$residents / $units',
+                style: TextStyle(
+                    fontSize: 12, color: _c.textSecondary),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${(pct * 100).toStringAsFixed(0)}%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: pct >= 0.5 ? AppColors.success : AppColors.warning,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct.clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: _c.border,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                pct >= 0.5 ? AppColors.success : AppColors.warning,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivationSummary() {
+    final activationPct = _totalInvitesIssued > 0
+        ? _totalInvitesUsed / _totalInvitesIssued
+        : 0.0;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _c.surface1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Invite Codes',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _c.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                '$_totalInvitesUsed / $_totalInvitesIssued used',
+                style: TextStyle(
+                    fontSize: 12, color: _c.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: activationPct.clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: _c.border,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.owner),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _analyticsBadge(
+                  '$_totalInvitesUsed', 'Used', AppColors.success),
+              const SizedBox(width: 8),
+              _analyticsBadge(
+                  '${_totalInvitesIssued - _totalInvitesUsed}',
+                  'Unclaimed',
+                  _c.textMuted),
+              const SizedBox(width: 8),
+              _analyticsBadge(
+                  '${(activationPct * 100).toStringAsFixed(1)}%',
+                  'Rate',
+                  AppColors.owner),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _analyticsBadge(String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: color),
+            ),
+            Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: _c.textMuted,
+                letterSpacing: 0.8,
               ),
             ),
           ],
@@ -623,96 +779,239 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  // ── Settings tab ──────────────────────────────────────────────────────────────
+
+  Widget _buildSettingsTab() {
+    final initial = _email.isNotEmpty ? _email[0].toUpperCase() : 'O';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Text(
+            'Settings',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: _c.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _c.surface1,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _c.border),
                 ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.owner.withValues(alpha: 0.15),
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          color: AppColors.owner,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _email,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _c.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$_totalProperties propert${_totalProperties == 1 ? 'y' : 'ies'}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _c.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GlowBadge(
+                      label: 'Owner',
+                      accent: AppColors.owner,
+                      showDot: false,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const _OwnerSectionLabel(text: 'SWITCH VIEW'),
+              const SizedBox(height: 12),
+              _buildRoleSwitchCard(
+                label: 'Operations Manager',
+                icon: Icons.admin_panel_settings_outlined,
+                color: AppColors.manager,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ManagerDashboardScreen()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildRoleSwitchCard(
+                label: 'Property Manager',
+                icon: Icons.apartment_outlined,
+                color: AppColors.manager,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          const PropertyManagerDashboardNewScreen()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildRoleSwitchCard(
+                label: 'Worker (Driver)',
+                icon: Icons.local_shipping_outlined,
+                color: AppColors.worker,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const WorkerDashboardScreen()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildRoleSwitchCard(
+                label: 'Resident',
+                icon: Icons.home_outlined,
+                color: AppColors.resident,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ResidentDashboardScreen()),
+                ),
+              ),
+              const SizedBox(height: 24),
+              PrimaryButton(
+                label: 'Sign Out',
+                onPressed: _signOut,
+                accent: AppColors.error,
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade700,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleSwitchCard({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _c.surface1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _c.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 18, color: color),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _c.textPrimary,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right,
+                size: 18, color: _c.textMuted),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPropertyStat(String label, String value, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey.shade600),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+  // ── Shared helpers ────────────────────────────────────────────────────────────
+
+  Widget _ownerMiniStat(String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
         ),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                color: _c.textMuted,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildOnboardingItem(String label, String value, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
+class _OwnerSectionLabel extends StatelessWidget {
+  final String text;
+  const _OwnerSectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: context.roleColors.textMuted,
+        letterSpacing: 1.2,
+      ),
     );
   }
 }

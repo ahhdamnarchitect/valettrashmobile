@@ -1,0 +1,11 @@
+# Dev session screenshots and temp files
+*.png
+*.jpg
+*.jpeg
+serve.js
+pm-session.json
+pm-session-compact.json
+
+# Tool caches
+.playwright-mcp/
+.superpowers/

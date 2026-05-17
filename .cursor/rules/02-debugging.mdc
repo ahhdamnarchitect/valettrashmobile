@@ -1,0 +1,12 @@
+---
+description: Enforce systematic debugging
+alwaysApply: true
+---
+
+When debugging:
+- identify the root cause before proposing broad changes
+- inspect logs, call paths, and adjacent files
+- prefer minimal targeted fixes
+- document confirmed root causes in brain/current_state.md
+- document meaningful fixes in brain/change_log.md
+- add follow-up hardening tasks to brain/next_steps.md when appropriate

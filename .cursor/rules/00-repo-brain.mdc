@@ -1,0 +1,24 @@
+---
+description: Enforce persistent repo brain workflow
+alwaysApply: true
+---
+
+Before meaningful work:
+1. Read:
+   - brain/project_context.md
+   - brain/architecture.md
+   - brain/current_state.md
+   - brain/decisions.md
+   - brain/next_steps.md
+2. Summarize current understanding.
+3. Identify the task, assumptions, and impacted files.
+
+After meaningful work:
+1. Update brain/current_state.md
+2. Append brain/change_log.md
+3. Update brain/next_steps.md
+4. Update brain/decisions.md if a decision was made
+5. Leave clear resume notes
+
+If brain files do not exist, create them.
+Never leave the repo in a non-resumable state.

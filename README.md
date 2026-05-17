@@ -115,7 +115,7 @@ See individual README files in each directory for specific setup instructions:
 
 ## Development Workflow
 
-1. Set up Supabase project and run migrations
+3. Apply SQL in order — see **[supabase/MIGRATIONS.md](./supabase/MIGRATIONS.md)** (invites, notifications broadcast, Storage, Stripe webhook notes).
 2. Configure environment variables
 3. Start Flutter mobile app
 4. Start admin dashboard
@@ -126,3 +126,15 @@ See individual README files in each directory for specific setup instructions:
 - Mobile: App Store / Google Play Store
 - Backend: Supabase (hosted)
 - Admin Dashboard: Vercel / Netlify
+
+## Cursor Repo OS
+
+This repo uses a persistent brain for resumable AI-assisted development.
+
+- Brain files live in `/brain`
+- Cursor rules live in `/.cursor/rules`
+- Operator docs live in `/cursor-os`
+- Bootstrap script lives in `/scripts/init-cursor-os.js`
+
+Future sessions should read and update the brain files before and after meaningful work.
+

@@ -33,10 +33,6 @@ class _TestConnectionScreenState extends State<TestConnectionScreen> {
     try {
       final supabase = Supabase.instance.client;
       
-      // Test basic Supabase connection by checking client
-      final clientUrl = supabase.supabaseUrl;
-      final clientKey = supabase.supabaseKey;
-      
       // Test auth session (safe operation)
       final currentUser = supabase.auth.currentUser;
       

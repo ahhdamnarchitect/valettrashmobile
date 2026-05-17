@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ManagerAlertsScreen extends StatefulWidget {
@@ -137,7 +137,7 @@ class _ManagerAlertsScreenState extends State<ManagerAlertsScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -176,7 +176,7 @@ class _ManagerAlertsScreenState extends State<ManagerAlertsScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Create and send alerts to residents about service updates, cancellations, and important information.',
                         style: TextStyle(
                           fontSize: 16,
@@ -198,7 +198,7 @@ class _ManagerAlertsScreenState extends State<ManagerAlertsScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

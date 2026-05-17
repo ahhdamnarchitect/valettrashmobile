@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ResidentServiceCalendarScreen extends StatefulWidget {
@@ -87,7 +87,7 @@ class _ResidentServiceCalendarScreenState extends State<ResidentServiceCalendarS
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _getDateColor(date).withOpacity(0.1),
+                color: _getDateColor(date).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: _getDateColor(date)),
               ),
@@ -271,7 +271,7 @@ class _ResidentServiceCalendarScreenState extends State<ResidentServiceCalendarS
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -311,7 +311,7 @@ class _ResidentServiceCalendarScreenState extends State<ResidentServiceCalendarS
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -353,7 +353,7 @@ class _ResidentServiceCalendarScreenState extends State<ResidentServiceCalendarS
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
