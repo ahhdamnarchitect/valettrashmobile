@@ -1,74 +1,58 @@
 # Next Steps
 
-## Completed (2026-05-16)
-- [x] `mobile/.env` written with Supabase URL + anon key
-- [x] Seed data applied: property `10000000...0001`, unit `104`, invite code `WELCOME104`
-- [x] `verify_invite_code` RPC confirmed returning `is_valid=true` for `WELCOME104`
-- [x] Flutter added to PATH (`C:\Users\e159305\Apps\flutter\bin`)
-- [x] `flutter config --enable-web` — done
-- [x] App compiles and runs: `flutter run -d chrome`
-- [x] Resident signup end-to-end verified (Sunset Gardens → unit 104 → WELCOME104 → dashboard)
-- [x] All 6 dashboards confirmed loading with real Supabase data
+## Before Submitting to Stores (action required from you)
 
-## Completed (2026-05-16 session 4)
-- [x] Fixed `SimpleAuthScreen` Form widget bug (null crash on every sign-in attempt)
-- [x] Fixed `AuthGate` routing — added `operations_manager` case + import for `ManagerDashboardScreen`
-- [x] Added `operations_manager` to `user_role` DB enum
-- [x] Created PM, OM, and worker test accounts with proper `user_properties`/`worker_assignments` rows
-- [x] Verified all 5 role dashboards with real Supabase data (PM, OM, Worker, Resident, Owner)
+- [ ] **Final app icon** — replace `assets/icon/app_icon.png` and `app_icon_foreground.png` with final artwork (1024×1024 PNG), then run:
+  ```powershell
+  flutter pub run flutter_launcher_icons
+  flutter pub run flutter_native_splash:create
+  ```
+- [ ] **iOS signing** — requires macOS + Xcode + Apple Developer account ($99/yr):
+  1. Open `ios/Runner.xcworkspace` in Xcode
+  2. Set your Apple team under Signing & Capabilities
+  3. `flutter build ipa` to produce the `.ipa` for App Store Connect
+- [ ] **Android release build** — keystore already configured, run from a machine with Android SDK:
+  ```
+  flutter build appbundle
+  ```
+  Upload the `.aab` to Google Play Console
+- [ ] **Production Supabase config** — when deploying to a real domain:
+  - Update Site URL from `http://localhost:8091` to `https://yourdomain.com`
+  - Add `https://yourdomain.com` to Redirect URLs
+  - Enable a real email provider (Resend / SendGrid) for confirmation and reset emails
+- [ ] **App Store / Play Store listing** — screenshots (6.7" iPhone, 12.9" iPad for iOS; multiple densities for Android), app description, keywords, age rating, privacy policy URL
 
-## Completed — Full Redesign (Phases 1–5) (2026-05-16)
-- [x] Phase 1: Design token system (AppColors, AppTypography, AppTheme.dark), shared widget library (GlowBadge, StatTile, SkeletonCard, RoleHeroCard, PrimaryButton, RoleBottomNav)
-- [x] Phase 2: ResidentDashboardScreen — 4-tab dark redesign (Home, History, Alerts, Profile)
-- [x] Phase 3: WorkerDashboardScreen — 4-tab dark redesign (Route, Comebacks, Violations, Profile)
-- [x] Phase 3: ViolationReportScreen — multi-step form (photo → type → details → confirm) with LottieSuccessView on submit
-- [x] Phase 4: PropertyManagerDashboardNewScreen — 4-tab dark redesign (Portfolio, Residents/Codes, Notify, Settings)
-- [x] Phase 4: ManagerDashboardScreen (OM) — 4-tab dark redesign (Dashboard, Workers, Comebacks, Notify)
-- [x] Phase 4: OwnerDashboardScreen — 4-tab dark redesign (Overview, Properties, Analytics, Settings)
-- [x] Phase 5: SharedAxisPageRoute — smooth horizontal screen transitions wired into Violation Report, Comebacks, Notification Sender
-- [x] Phase 5: Lottie assets created (success.json, error.json) + LottieSuccessView/LottieErrorView widgets
-- [x] Phase 5: All analyzer errors fixed — zero errors, clean build
+---
 
-## Completed (2026-05-16 session 5)
-- [x] Redesigned 3 old-style screens to dark design system: ResidentViolationsScreen, SimpleNotificationSenderScreen, TodayComebacksScreen
-- [x] Added OM Profile tab with sign-out button (5th tab)
-- [x] flutter_map route map for workers — WorkerRouteMapScreen (OpenStreetMap, no API key, route stops list)
-- [x] Resident missed-pickup reporting — ResidentReportMissedPickupScreen (photo + notes → missed_pickup_requests)
-- [x] Worker proof-of-pickup photo — bottom sheet on comeback completion with optional photo upload to violations bucket
-- [x] Pickup status banner — resident Home tab polls nightly_runs every 30s, shows "porter is collecting" / "pickup complete" banner
+## Next Features (prioritized)
 
-## Schema Changes Applied (2026-05-16)
-- `missed_pickup_requests`: `notes text`, `photo_url text` — added via SQL editor
-- `properties`: `latitude double precision`, `longitude double precision` — added via SQL editor
+- [ ] **Stripe paid comeback requests** — in-app UI placeholder already exists; blocked on Stripe account + webhook secret. Once you have those, wire `stripe_checkout` into `ResidentComebackRequestScreen`
+- [ ] **Push notifications** — defer until native build is in TestFlight / Play Store internal testing:
+  - Android: FCM (Firebase Cloud Messaging) — free
+  - iOS: APNs via FCM or OneSignal — requires Apple Developer account
+- [ ] **Worker location on native** — currently uses `dart:html` (web only). Swap to `geolocator` package for iOS/Android builds
+- [ ] **CSV export on native** — `PmComplianceReportScreen` uses `dart:html` for download. Swap to `path_provider` + `share_plus` for native builds
 
-## Now — Feature Development (all completed 2026-05-16 session 7)
-- [x] Resident: vacation/hold service — ResidentVacationHoldScreen, writes is_on_hold/hold_note to resident_units
-- [x] Worker: earnings dashboard — WorkerEarningsScreen reads clock_events; _toggleDuty() persists clock in/out
-- [x] PM compliance/SLA reporting — PmComplianceReportScreen with date range picker + CSV export via dart:html
-- [x] OM live worker location map — OmWorkerMapScreen with Supabase Realtime stream on worker_locations
-- [x] Worker: location sharing button — calls dart:html geolocation + upserts to worker_locations
-- [x] Light mode theme for PM/Owner roles — implemented via AppColorsScheme ThemeExtension
+---
 
-## Push Notifications (when ready to ship native)
-- Flutter compiles to native iOS + Android — push notifications ARE relevant for mobile
-- **Android:** FCM (Firebase Cloud Messaging) — free, no third-party needed
-- **iOS:** APNs — requires Apple Developer account ($99/yr); OneSignal simplifies setup
-- **Web:** Service Worker + Web Push API — no external service needed
-- Defer until preparing for App Store / Play Store submission
+## Technical Debt
 
-## Payments (when ready)
-- [ ] Stripe webhook edge function — blocked on Stripe account + webhook secret
-- SMS pickup reminders (Twilio) — deprioritized; in-app banner + email covers the use case
+- [ ] `supabase_flutter` v1 → v2 upgrade — **BLOCKED** in this environment (missing transitive deps). Try on a machine with full internet/VPN access
+- [ ] `main_simple.dart` — unclear purpose, remove or document
+- [ ] Integration tests for invite code flow
+- [ ] Confirm `AdminDashboardScreen` RLS policies cover all edge cases with real data at scale
 
-## Technical Debt / Improvements
-- [x] Replace `withOpacity()` with `.withValues(alpha: ...)` throughout — 23 files, 0 remaining
-- [x] Remove `_legacyBuild()` and `_buildLegacyDashboard()` dead code — 867 lines deleted
-- [x] Add `.env.example` file for developer onboarding
-- [ ] Upgrade `supabase_flutter` from v1.10.25 to v2 — **BLOCKED**: transitive deps `app_links-7.0.0` and `sign_in_with_apple_web` not resolving in this environment (missing from pub cache, `pub cache repair` didn't fix it). Try on a machine with full internet access or VPN.
-- [ ] Add integration tests for the invite code flow
-- [ ] Clarify `main_simple.dart` — remove or document purpose
-- [ ] Confirm admin_dashboard targets the correct Supabase project
+---
 
-## Blocked / Waiting
-- Stripe integration blocked on Stripe account setup and webhook secret
-- OneSignal blocked on OneSignal app ID / account setup
+## Completed Sessions (summary)
+
+All prior work is complete and documented in `brain/change_log.md`. Summary:
+
+| Session | Key deliverable |
+|---|---|
+| 1–3 | Initial setup, Supabase schema, seed data, all 6 dashboards connected to real data |
+| 4 | Auth bug fixes, OM/PM/Worker test accounts, role routing |
+| 5–7 | Dark redesign (all dashboards), violation report, map, worker earnings, vacation hold, CSV export, realtime worker map |
+| 8 | Comeback request flow, resident concerns, admin portal (5 tabs), admin RLS |
+| 9 | super_admin account, password reset + visibility toggle (all dashboards), Supabase URL config |
+| 10 | Owner routing fix, Android + iOS platform setup, permissions, signing, icons, splash, deep links |

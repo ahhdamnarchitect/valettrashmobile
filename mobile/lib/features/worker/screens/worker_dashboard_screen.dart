@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/screens/change_password_screen.dart';
 import '../../../core/utils/page_transitions.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -118,6 +119,20 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           'status': row['status']?.toString() ?? 'pending',
         });
       }
+
+      // Restore clock-in state from last clock event
+      try {
+        final lastEvent = await client
+            .from('clock_events')
+            .select('event_type')
+            .eq('user_id', user.id)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        if (lastEvent != null && lastEvent['event_type'] == 'clock_in') {
+          _isOnDuty = true;
+        }
+      } catch (_) {}
     } catch (_) {
       _comebackRequests = [];
     } finally {
@@ -839,6 +854,17 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              PrimaryButton(
+                label: 'Change Password',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ChangePasswordScreen()),
+                ),
+                accent: AppColors.info,
+                icon: Icons.lock_reset_outlined,
+              ),
+              const SizedBox(height: 10),
               PrimaryButton(
                 label: 'Sign Out',
                 onPressed: _signOut,

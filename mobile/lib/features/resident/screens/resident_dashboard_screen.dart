@@ -10,7 +10,9 @@ import '../../../core/widgets/role_bottom_nav.dart';
 import '../../../core/widgets/role_hero_card.dart';
 import '../../../core/widgets/skeleton_card.dart';
 import '../../../core/widgets/stat_tile.dart';
-import 'resident_report_missed_pickup_screen.dart';
+import '../../auth/screens/change_password_screen.dart';
+import 'resident_comeback_request_screen.dart';
+import 'resident_concerns_screen.dart';
 import 'resident_vacation_hold_screen.dart';
 import 'resident_violations_screen.dart';
 
@@ -502,15 +504,30 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
           _actionRow(
             icon: Icons.replay_outlined,
             iconColor: AppColors.resident,
-            title: 'Report Missed Pickup',
+            title: 'Request a Comeback',
             subtitle: _freeRemain > 0
-                ? 'Free ($_freeRemain remaining)'
-                : 'Fees may apply — \$${_comebackFee.toStringAsFixed(0)}',
+                ? '$_freeRemain free remaining this month'
+                : 'Additional comebacks — \$${_comebackFee.toStringAsFixed(0)}',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    const ResidentReportMissedPickupScreen(),
+                builder: (_) => ResidentComebackRequestScreen(
+                  freeRemain: _freeRemain,
+                  comebackFee: _comebackFee,
+                ),
+              ),
+            ),
+          ),
+          Divider(height: 1, color: AppColors.border),
+          _actionRow(
+            icon: Icons.help_outline,
+            iconColor: AppColors.info,
+            title: 'Questions & Concerns',
+            subtitle: 'Submit a question or feedback',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ResidentConcernsScreen(),
               ),
             ),
           ),
@@ -958,6 +975,17 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              PrimaryButton(
+                label: 'Change Password',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ChangePasswordScreen()),
+                ),
+                accent: AppColors.info,
+                icon: Icons.lock_reset_outlined,
+              ),
+              const SizedBox(height: 10),
               PrimaryButton(
                 label: 'Sign Out',
                 onPressed: () => _signOut(context),

@@ -11,6 +11,7 @@ import '../../manager/screens/property_manager_dashboard_new.dart';
 import '../../owner/screens/owner_dashboard_screen.dart';
 import '../../test/screens/test_connection_screen.dart';
 import '../../worker/screens/worker_dashboard_screen.dart';
+import 'change_password_screen.dart';
 import 'resident_signup_screen.dart';
 
 class SimpleAuthScreen extends StatefulWidget {
@@ -49,6 +50,7 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
 
   bool _isLoading = false;
   bool _isLogin = true;
+  bool _obscurePassword = true;
   String? _error;
   String? _success;
 
@@ -181,7 +183,8 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
                 _OnceAnimate(delay: 120.ms, child: _buildEmailField()),
                 const SizedBox(height: 12),
                 _OnceAnimate(delay: 180.ms, child: _buildPasswordField()),
-                const SizedBox(height: 24),
+                if (_isLogin) _buildForgotPasswordLink(),
+                const SizedBox(height: 16),
                 if (_error != null) _buildErrorBadge(),
                 if (_success != null) _buildSuccessBadge(),
                 const SizedBox(height: 4),
@@ -298,7 +301,18 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
     return _darkField(
       controller: _passwordController,
       label: 'Password',
-      obscureText: true,
+      obscureText: _obscurePassword,
+      suffixIcon: IconButton(
+        icon: Icon(
+          _obscurePassword
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
+          size: 20,
+          color: AppColors.textMuted,
+        ),
+        onPressed: () =>
+            setState(() => _obscurePassword = !_obscurePassword),
+      ),
       validator: (v) {
         if (v == null || v.isEmpty) return 'Required';
         if (v.length < 6) return 'At least 6 characters';
@@ -312,6 +326,7 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
     required String label,
     bool obscureText = false,
     TextInputType? keyboardType,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -326,6 +341,7 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
         filled: true,
         fillColor: AppColors.surface2,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.border),
@@ -345,6 +361,30 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForgotPasswordLink() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: const Text(
+          'Forgot password?',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     );

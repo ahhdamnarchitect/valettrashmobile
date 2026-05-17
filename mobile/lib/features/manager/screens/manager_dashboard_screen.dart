@@ -2,6 +2,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/screens/change_password_screen.dart';
 import '../../../core/utils/page_transitions.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -1042,6 +1043,18 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
         const _DarkSectionLabel(text: 'SESSION'),
         const SizedBox(height: 12),
+
+        PrimaryButton(
+          label: 'Change Password',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const ChangePasswordScreen()),
+          ),
+          accent: AppColors.info,
+          icon: Icons.lock_reset_outlined,
+        ),
+        const SizedBox(height: 10),
 
         // Sign out button
         SizedBox(

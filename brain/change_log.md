@@ -5,6 +5,99 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-05-16 (Session 9 — super_admin account, password reset flow, visibility toggles)
+
+- **DB changes** (Supabase dashboard):
+  - Created auth user `relaxedlivingtx@gmail.com` (UID: `14e75f4c-29de-4516-b8d1-7bebe963535d`, pass: `RelaxedLiving2026!`) — business owner / super_admin
+  - `INSERT INTO public.users ... role='super_admin'` for that UID
+  - Supabase Auth → URL Configuration: Site URL updated to `http://localhost:8091`; `http://localhost:8091` added to Redirect URLs (previously no redirect URLs and wrong port 3000)
+
+- **Files Created**:
+  - `mobile/lib/features/auth/screens/change_password_screen.dart` — three-state screen: (1) "Send reset email" with email display, (2) email-sent confirmation with resend button, (3) "Set new password" form (isRecovery=true, launched from AuthGate passwordRecovery event). Password fields have visibility toggles.
+
+- **Files Modified**:
+  - `mobile/lib/valet_app.dart` — `AuthGate` StreamBuilder intercepts `AuthChangeEvent.passwordRecovery` → shows `ChangePasswordScreen(isRecovery: true)` before routing to role home
+  - `mobile/lib/features/auth/screens/simple_auth_screen.dart` — password field now has `_obscurePassword` state + `suffixIcon` visibility toggle; `_darkField()` extended to accept `Widget? suffixIcon`
+  - `mobile/lib/features/auth/screens/resident_signup_screen.dart` — password field has `_obscurePassword` state + visibility toggle; `_field()` helper extended with `VoidCallback? onToggleObscure`
+  - `mobile/lib/features/resident/screens/resident_dashboard_screen.dart` — "Change Password" PrimaryButton added before Sign Out in Profile tab
+  - `mobile/lib/features/worker/screens/worker_dashboard_screen.dart` — "Change Password" PrimaryButton added before Sign Out in Profile tab
+  - `mobile/lib/features/manager/screens/manager_dashboard_screen.dart` — "Change Password" PrimaryButton added before Sign Out in Profile tab
+  - `mobile/lib/features/manager/screens/property_manager_dashboard_new.dart` — "Change Password" PrimaryButton added before Sign Out in Settings tab
+  - `mobile/lib/features/admin/screens/admin_dashboard_screen.dart` — "Change Password" `_toolTile` added before Sign Out tile in Tools tab
+
+- **Bug fixes**:
+  - `change_password_screen.dart` line 78: `supabase.auth.update()` → `supabase.auth.updateUser()` (gotrue-1.12.6 API)
+
+- **Verified**: `flutter build web --no-tree-shake-icons` → `✓ Built build/web` (clean, no errors)
+- Added "Forgot password?" link on login screen (right-aligned, below password field, login mode only) → navigates to `ChangePasswordScreen`
+- Created `brain/test_credentials.md` — all test accounts, passwords, role→screen mapping, test data
+
+### 2026-05-16 (Session 10 — Owner routing fix + App Store / Play Store prep)
+
+- **Owner routing**: Added `case 'owner':` in `RoleHome` switch → `OwnerDashboardScreen` (light theme). Previously fell through to resident dashboard.
+
+- **Native platform generation**: Ran `flutter create --platforms=android,ios --org com.relaxedliving --project-name valet .`
+  - Created `android/` and `ios/` directories
+  - Bundle ID / applicationId: `com.relaxedliving.valet`
+
+- **Android** (`android/app/`):
+  - `build.gradle.kts` — minSdk 21, release signing via `key.properties`, R8 minification + resource shrinking enabled
+  - `src/main/AndroidManifest.xml` — app label "Relaxed Living Valet", added CAMERA, READ_MEDIA_IMAGES, READ_EXTERNAL_STORAGE (maxSdk 32), WRITE_EXTERNAL_STORAGE (maxSdk 28), ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION permissions; deep link intent filter for `com.relaxedliving.valet://login-callback`
+  - `app/proguard-rules.pro` — created with Flutter + Supabase/okhttp rules
+  - `key.properties` + `upload-keystore.jks` generated (both gitignored); password: `RLValet2026!Key`
+
+- **iOS** (`ios/Runner/Info.plist`):
+  - `CFBundleDisplayName` / `CFBundleName` → "Relaxed Living Valet"
+  - Added `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSPhotoLibraryAddUsageDescription`, `NSLocationWhenInUseUsageDescription`
+  - Added `CFBundleURLTypes` with scheme `com.relaxedliving.valet` for deep links
+  - Portrait-only for phones (`UISupportedInterfaceOrientations`)
+
+- **pubspec.yaml**: renamed package `mobile` → `valet`, updated description, added `flutter_launcher_icons ^0.14.3` and `flutter_native_splash ^2.4.3` dev deps with full config
+
+- **App icons**: Created placeholder PNGs at `assets/icon/` (emerald circle with "RL" monogram, dark bg); ran `flutter pub run flutter_launcher_icons` — icons generated for Android (standard + adaptive) and iOS
+
+- **Splash screen**: Configured dark background `#0A0C0F` with splash logo; ran `flutter pub run flutter_native_splash:create` — splash generated for Android (including API 31+) and iOS
+
+- **Deep links**: 
+  - `main.dart` — added `authCallbackUrlHostname: 'login-callback'` to `Supabase.initialize()`
+  - `change_password_screen.dart` — platform-aware `redirectTo`: `null` on web, `com.relaxedliving.valet://login-callback` on mobile
+  - Supabase Auth → Redirect URLs: added `com.relaxedliving.valet://login-callback` (Total: 2 URLs)
+
+- **Verified**: `flutter build web --no-tree-shake-icons` → `✓ Built build/web` (clean after `flutter clean`)
+
+---
+
+### 2026-05-16 (Session 8 — Comeback Requests, Concerns, Admin Portal)
+
+- **DB changes** (Supabase SQL editor):
+  - `ALTER TABLE missed_pickup_requests ADD COLUMN IF NOT EXISTS is_free boolean DEFAULT true, payment_status text DEFAULT 'free', payment_amount_cents int, stripe_payment_intent_id text`
+  - `ALTER TABLE properties ADD COLUMN IF NOT EXISTS free_comeback_pickups_per_month int DEFAULT 1, comeback_pickup_fee numeric(10,2) DEFAULT 15.00`
+  - `CREATE TABLE resident_concerns (id uuid PK, resident_user_id uuid FK users, property_id uuid FK properties, subject text, message text, status text DEFAULT 'open', created_at timestamptz)` + RLS
+  - `CREATE TABLE resident_monthly_usage (user_id uuid, year_month text, comeback_count int DEFAULT 0, PRIMARY KEY(user_id, year_month))` + RLS
+  - Added `FOR ALL TO authenticated` admin RLS policies on `users`, `properties`, `resident_units`, `resident_concerns`, `missed_pickup_requests`, `invite_codes`, `worker_assignments`
+
+- **Files Created**:
+  - `mobile/lib/features/resident/screens/resident_comeback_request_screen.dart` — quota-aware comeback flow (1 free/month, Stripe-ready paid path with placeholder dialog, LottieSuccessView)
+  - `mobile/lib/features/resident/screens/resident_concerns_screen.dart` — subject dropdown + message textarea, submits to resident_concerns, LottieSuccessView
+  - `mobile/lib/features/admin/screens/admin_dashboard_screen.dart` — full 5-tab admin portal (Users, Properties, Residents, Concerns, Tools); inline `_AdminComebacksScreen` and `_AdminWorkerAssignmentsScreen`
+  - `mobile/lib/features/admin/screens/admin_invite_codes_screen.dart` — per-property invite code list, generate sheet, copy/revoke actions
+
+- **Files Modified**:
+  - `mobile/lib/features/resident/screens/resident_dashboard_screen.dart` — replaced "Report Missed Pickup" with "Request a Comeback" + "Questions & Concerns" quick action tiles; loads free_comeback_pickups_per_month and resident_monthly_usage on init
+  - `mobile/lib/features/auth/screens/resident_signup_screen.dart` — full dark redesign (was light mode); uses AppColors tokens, PrimaryButton, GlowBadge, dark field helper; business logic unchanged
+  - `mobile/lib/features/worker/screens/worker_dashboard_screen.dart` — added clock state restoration on login (queries clock_events for last event; if clock_in, sets _isOnDuty = true)
+  - `mobile/lib/valet_app.dart` — added super_admin case routing to AdminDashboardScreen (AppTheme.light)
+
+- **Verified** (2026-05-16): Admin portal end-to-end with super_admin role:
+  - Users tab: 7 accounts loaded, role pills correct, edit sheet pre-fills all fields
+  - Properties tab: 3 properties loaded with service window and comeback fee config
+  - Residents tab: active assignments with property filter chips working
+  - Concerns tab: Open/In Review/Resolved filters, empty state working
+  - Tools tab: Invite Codes nav, Comeback Requests nav, Worker Assignments nav, Sign Out
+  - Invite Codes sub-screen: property filter chips, empty state, generate sheet with pre-filled property/unit/max-uses/validity
+
+---
+
 ### 2026-05-16 (Session 7 — Features + Tech Debt)
 - **Change**: Implemented 4 new user-facing features and completed major tech debt cleanup.
 - **DB changes** (Supabase SQL editor):

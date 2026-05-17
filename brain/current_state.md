@@ -1,68 +1,118 @@
 # Current State
 
 ## Current Objective
-**Redesign complete (Phases 1–5).** All 5 role dashboards now use the dark design system with consistent tab navigation, AppColors token system, and shared widgets. App builds cleanly with zero errors.
+**App Store / Play Store ready.** All features complete. Native Android and iOS platform directories generated and configured. Waiting on final icon artwork and Apple Developer account before actual submission.
 
-## Next Action
+## Run the App
 ```powershell
-# Run the app:
 cd C:\Users\e159305\Projects\valettrashmobile\mobile
-flutter run -d web-server --web-port 8090 --no-pub
-# OR: flutter run -d chrome --no-pub
+& "C:\Users\e159305\Apps\flutter\bin\flutter.bat" run -d web-server --web-port 8091 --no-pub
+# or
+& "C:\Users\e159305\Apps\flutter\bin\flutter.bat" run -d chrome --no-pub
 ```
 
-## What Exists
+---
 
-- **Supabase DB** (project: `relaxedl-living`, ref: `airpwzzkyjqzeeqizvft`, AWS us-east-2)
-  - Status: Fully migrated — migrations 001, 004, 005, 006 applied
-  - All tables exist with correct schema, RLS enabled, SECURITY DEFINER RPCs in place
-  - `violations` storage bucket created with RLS policies for residents and workers
-  - Seed data applied (2026-05-16): property `10000000...0001` (Sunset Gardens), building, floor, unit 104, invite code `WELCOME104`
+## Supabase
 
-- **Flutter mobile app** (`mobile/`)
-  - Status: **FULLY REDESIGNED** — compiles, all dashboards rebuilt with dark UI. Zero analyzer errors.
-  - Flutter SDK: `C:\Users\e159305\Apps\flutter\bin` (Flutter 3.41.9)
-  - Entry: `main.dart` → `ValetApp` → `AuthGate` → role-based screen
+| Item | Value |
+|---|---|
+| Project | `relaxedl-living` |
+| Ref | `airpwzzkyjqzeeqizvft` |
+| Region | AWS us-east-2 |
+| Site URL | `http://localhost:8091` |
+| Redirect URLs | `http://localhost:8091`, `com.relaxedliving.valet://login-callback` |
 
-  ### Design System (Phase 1 — complete)
-  - Tokens: `core/theme/app_colors.dart` — background, surface1/2, border, textPrimary/Secondary/Muted, role accents (resident=emerald, worker=amber, manager=indigo, owner=purple)
-  - Shared widgets: `glow_badge`, `stat_tile`, `skeleton_card`, `role_hero_card`, `primary_button`, `role_bottom_nav`
-  - Utility: `core/utils/page_transitions.dart` — `SharedAxisPageRoute` for animated screen pushes
-  - Lottie assets: `assets/lottie/success.json`, `assets/lottie/error.json`
-  - `core/widgets/lottie_feedback.dart` — `LottieSuccessView`, `LottieErrorView`
+- All tables migrated, RLS enabled, SECURITY DEFINER RPCs in place
+- `violations` storage bucket with RLS policies
+- Seed data: property `10000000-0000-0000-0000-000000000001` (Sunset Gardens), unit 104, invite code `WELCOME104`
+- Email confirmation **disabled** — re-enable when a real email provider is configured
 
-  ### Role Dashboards (Phases 2–4 — complete)
-  - **Resident** (`resident_dashboard_screen.dart`): 4 tabs — Home (RoleHeroCard + stats + quick actions + notifications preview), History (pickup history), Alerts (notifications), Profile
-  - **Worker** (`worker_dashboard_screen.dart`): 4 tabs — Route (amber hero + Clock In/Out + stats), Comebacks, Violations (Report Violation → SharedAxisPageRoute → multi-step form + LottieSuccessView), Profile
-  - **Operations Manager** (`manager_dashboard_screen.dart`): 4 tabs — Dashboard (tonight's runs + comeback history), Workers (list with amber avatars), Comebacks (stats + View Full List), Notify (Alert All + 1 Resident)
-  - **Property Manager** (`property_manager_dashboard_new.dart`): 4 tabs — Portfolio (property cards), Residents (invite codes), Notify, Settings
-  - **Owner** (`owner_dashboard_screen.dart`): 4 tabs — Overview (KPI grid + property snapshots), Properties (detail cards), Analytics (occupancy bars + activation gauge), Settings (role switcher + sign out)
+---
 
-  ### Polish (Phase 5 — complete)
-  - `SharedAxisPageRoute` wired: Violation Report, Notification Sender, Comebacks
-  - `LottieSuccessView` used on violation submission success
-  - `animations` package: SharedAxisTransition utility in `core/utils/page_transitions.dart`
-  - All analyzer errors fixed including pre-existing `Icons.door_front` and `const Colors.grey.shade700`
+## Flutter App (`mobile/`)
 
-  ### Key Technical Notes
-  - Supabase filter syntax: `.filter('col', 'in', '(${ids.join(',')})')` — not `.inFilter()` (v1 compat)
-  - `Future.wait(<Future<dynamic>>[...])` — typed generic required for Flutter web
-  - GlowBadge requires `accent` (required param) and `showDot` (default true)
+- **Package name**: `valet` (renamed from `mobile` in session 10)
+- **Flutter SDK**: `C:\Users\e159305\Apps\flutter\bin` (Flutter 3.41.9)
+- **Entry**: `main.dart` → `ValetApp` → `AuthGate` → `RoleHome` switch → role dashboard
 
-- **Test accounts** (all password `TestPass123!`):
-  - `adam.grant824+res2@gmail.com` — resident, unit 104, Sunset Gardens
-  - `adam.grant824+pm@gmail.com` — property_manager
-  - `adam.grant824+om@gmail.com` — operations_manager
-  - `adam.grant824+worker@gmail.com` — driver
+### Role → Screen Routing
 
-- **Known Issues** (pre-existing, not introduced by redesign)
-  - `supabase_flutter` pinned at v1.10.25 — v2 migration is a future breaking change
-  - No `.env` committed — developers need `mobile/.env` with `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-  - Supabase email confirmation disabled — re-enable when email provider configured
-  - `withOpacity` is deprecated in Flutter 3.x — use `.withValues(alpha: ...)` to silence warnings (info only, not errors)
-  - `_legacyBuild()` / `_buildLegacyDashboard()` in OM/PM files are dead code (warnings only)
+| Role | Screen | Theme |
+|---|---|---|
+| `resident` | `ResidentDashboardScreen` | Dark |
+| `driver` | `WorkerDashboardScreen` | Dark |
+| `operations_manager` | `ManagerDashboardScreen` | Dark |
+| `property_manager` | `PropertyManagerDashboardNewScreen` | Light |
+| `owner` | `OwnerDashboardScreen` | Light |
+| `super_admin` | `AdminDashboardScreen` | Light |
 
-## Resume Instructions
-1. Read this file first, then `brain/next_steps.md`
-2. `flutter run -d web-server --web-port 8090 --no-pub` from `mobile/`
-3. All redesign complete — next: push notifications, Stripe webhook, or OneSignal integration
+### Auth Flow
+- `AuthGate` (StreamBuilder on `onAuthStateChange`) intercepts `passwordRecovery` event → shows `ChangePasswordScreen(isRecovery: true)`
+- Login screen has "Forgot password?" link (below password field, login mode only)
+- All dashboards have a "Change Password" button in profile/settings tab
+- `Supabase.initialize()` has `authCallbackUrlHostname: 'login-callback'` for mobile deep links
+
+### Design System
+- Tokens: `core/theme/app_colors.dart` — background, surface1/2, border, textPrimary/Secondary/Muted
+- Role accents: resident=emerald, worker=amber, manager=indigo, owner=purple, admin=info
+- Shared widgets: `GlowBadge`, `StatTile`, `SkeletonCard`, `RoleHeroCard`, `PrimaryButton`, `RoleBottomNav`
+- Animations: `SharedAxisPageRoute` (`core/utils/page_transitions.dart`), Lottie success/error
+
+### Key Technical Gotchas
+- Supabase v1 filter: `.filter('col', 'in', '(${ids.join(',')})')` — not `.inFilter()`
+- `Future.wait(<Future<dynamic>>[...])` — typed generic required for Flutter web
+- `GlowBadge` requires `accent` (required) and `showDot` (optional, default true)
+- `supabase.auth.updateUser()` not `.update()` (gotrue-1.12.6 API)
+- Password reset on mobile passes `redirectTo: 'com.relaxedliving.valet://login-callback'`; web passes `null`
+
+---
+
+## Native Platform (Android + iOS)
+
+Generated in session 10. Both platforms use bundle ID `com.relaxedliving.valet`.
+
+### Android
+- `applicationId`: `com.relaxedliving.valet`
+- `minSdk`: 21
+- Permissions: INTERNET, CAMERA, READ_MEDIA_IMAGES, READ/WRITE_EXTERNAL_STORAGE, ACCESS_FINE/COARSE_LOCATION
+- Release signing: `android/upload-keystore.jks` + `android/key.properties` (password: `RLValet2026!Key`)
+- R8 minification + resource shrinking enabled in release builds
+- Deep link intent filter: `com.relaxedliving.valet://login-callback`
+
+### iOS
+- Bundle ID set via Xcode (`PRODUCT_BUNDLE_IDENTIFIER` = `com.relaxedliving.valet`)
+- Display name: "Relaxed Living Valet"
+- Privacy strings: Camera, Photo Library (read + add), Location when in use
+- URL scheme: `com.relaxedliving.valet` (for deep links)
+- Portrait-only on phones; all orientations on iPad
+- **iOS builds require macOS + Xcode + Apple Developer account**
+
+### App Icon & Splash
+- Placeholder icon at `assets/icon/app_icon.png` — emerald circle with "RL" monogram
+- Generated with `flutter pub run flutter_launcher_icons` (all Android mipmap sizes + adaptive, all iOS sizes)
+- Splash: dark `#0A0C0F` background, Android 12+ compatible
+- Generated with `flutter pub run flutter_native_splash:create`
+- **Replace placeholder before submitting** — drop final 1024×1024 PNG into `assets/icon/app_icon.png` and re-run launcher icons
+
+---
+
+## Test Accounts
+Full list in `brain/test_credentials.md`. Quick reference:
+
+| Email | Password | Role |
+|---|---|---|
+| `relaxedlivingtx@gmail.com` | `RelaxedLiving2026!` | `super_admin` |
+| `adam.grant824+om@gmail.com` | `TestPass123!` | `operations_manager` |
+| `adam.grant824+worker@gmail.com` | `TestPass123!` | `driver` |
+| `adam.grant824+pm@gmail.com` | `TestPass123!` | `property_manager` |
+| `adam.grant824+res2@gmail.com` | `TestPass123!` | `resident` (unit 104) |
+
+---
+
+## Known Issues / Constraints
+- `supabase_flutter` pinned at v1.10.25 — v2 upgrade blocked by missing transitive deps in this environment; try on a machine with full internet access
+- `.env` is not committed — developers need `mobile/.env` with `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+- `withOpacity` deprecation warnings (info only, not errors) — use `.withValues(alpha: ...)` to silence
+- `PmComplianceReportScreen` uses `dart:html` for CSV export — web only; will need `dart:io` path for native builds
+- Worker location sharing uses `dart:html` geolocation — web only; needs `geolocator` package for native

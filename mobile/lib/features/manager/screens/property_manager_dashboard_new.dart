@@ -2,6 +2,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/screens/change_password_screen.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/role_bottom_nav.dart';
@@ -860,6 +861,17 @@ class _PropertyManagerDashboardNewScreenState
                     ),
                   )),
               const SizedBox(height: 12),
+              PrimaryButton(
+                label: 'Change Password',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ChangePasswordScreen()),
+                ),
+                accent: AppColors.info,
+                icon: Icons.lock_reset_outlined,
+              ),
+              const SizedBox(height: 10),
               PrimaryButton(
                 label: 'Sign Out',
                 onPressed: _signOut,
