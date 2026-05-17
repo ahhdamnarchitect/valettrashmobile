@@ -28,13 +28,9 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
   String _residentName = 'Resident';
   String _email = '';
   String _propertyName = '';
-  String _serviceDateStr = '--';
   String _windowShort = '--';
-  String _countdownLabel = '—';
   int _freeRemain = 0;
   String _freeSummary = '--';
-  int _violationsCount = 0;
-  num _comebackFee = 15;
 
   List<Map<String, dynamic>> _notifications = [];
   bool _notifLoading = false;
@@ -98,33 +94,6 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
     return '$h12:${m.toString().padLeft(2, '0')} $ap';
   }
 
-  String _nextWindowPhrase(
-      DateTime todayLocal, dynamic startStr, dynamic endStr) {
-    final startLbl = _fmtTime(startStr);
-    final endLbl = _fmtTime(endStr);
-    final partsStart = startStr.toString().split(':');
-    if (partsStart.length < 2) return 'Window $startLbl – $endLbl';
-    final sh = int.tryParse(partsStart[0]) ?? 18;
-    final sm = int.tryParse(partsStart[1]) ?? 0;
-    final start =
-        DateTime(todayLocal.year, todayLocal.month, todayLocal.day, sh, sm);
-    if (todayLocal.isBefore(start)) {
-      final mins = start.difference(todayLocal).inMinutes;
-      if (mins < 60) return 'Starts in ${mins}m';
-      final h = mins ~/ 60;
-      final m = mins % 60;
-      return 'Starts in ${h}h ${m}m';
-    }
-    final partsEnd = endStr.toString().split(':');
-    if (partsEnd.length < 2) return 'In service until $endLbl';
-    final eh = int.tryParse(partsEnd[0]) ?? 22;
-    final em = int.tryParse(partsEnd[1]) ?? 0;
-    final end =
-        DateTime(todayLocal.year, todayLocal.month, todayLocal.day, eh, em);
-    if (todayLocal.isBefore(end)) return 'In service until ${_fmtTime(endStr)}';
-    return 'Next window tomorrow $startLbl – $endLbl';
-  }
-
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -177,9 +146,6 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
       if (prop != null && assignmentMap != null) {
         _propertyName = prop['name']?.toString() ?? '';
         _propertyId = assignmentMap['property_id']?.toString();
-        _comebackFee = prop['comeback_pickup_fee'] is num
-            ? prop['comeback_pickup_fee'] as num
-            : 15;
         final freeCapRaw = prop['free_comeback_pickups_per_month'];
         final freeCap =
             freeCapRaw is int ? freeCapRaw : int.tryParse('$freeCapRaw') ?? 0;
@@ -208,18 +174,10 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             ? 'No free comebacks configured'
             : '$_freeRemain of $freeCap left this month';
 
-        _serviceDateStr = '${now.month}/${now.day}/${now.year}';
         final startT = prop['service_window_start'];
         final endT = prop['service_window_end'];
         _windowShort = '${_fmtTime(startT)} – ${_fmtTime(endT)}';
-        _countdownLabel = _nextWindowPhrase(now, startT, endT);
       }
-
-      final viol = await Supabase.instance.client
-          .from('violations')
-          .select('id')
-          .eq('resident_user_id', uid);
-      _violationsCount = viol is List ? viol.length : 0;
 
       setState(() => _loading = false);
 
@@ -260,13 +218,6 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
   void _onTabChange(int index) {
     setState(() => _tabIndex = index);
     if (index == 2 && !_notifLoaded) _loadNotifications();
-  }
-
-  void _snack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: AppColors.surface1,
-      content: Text(msg, style: const TextStyle(color: AppColors.textPrimary)),
-    ));
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────
