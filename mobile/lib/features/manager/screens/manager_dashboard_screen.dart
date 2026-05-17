@@ -340,27 +340,27 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 RoleNavItem(
                   icon: Icons.dashboard_outlined,
                   activeIcon: Icons.dashboard,
-                  label: 'Dashboard',
+                  label: 'Overview',
                 ),
                 RoleNavItem(
-                  icon: Icons.people_outline,
-                  activeIcon: Icons.people,
-                  label: 'Workers',
-                ),
-                RoleNavItem(
-                  icon: Icons.replay_outlined,
-                  activeIcon: Icons.replay,
-                  label: 'Comebacks',
+                  icon: Icons.route_outlined,
+                  activeIcon: Icons.route,
+                  label: 'Routes',
                 ),
                 RoleNavItem(
                   icon: Icons.notifications_outlined,
                   activeIcon: Icons.notifications,
-                  label: 'Notify',
+                  label: 'Alerts',
                 ),
                 RoleNavItem(
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  label: 'Profile',
+                  icon: Icons.bar_chart_outlined,
+                  activeIcon: Icons.bar_chart,
+                  label: 'Reports',
+                ),
+                RoleNavItem(
+                  icon: Icons.more_horiz,
+                  activeIcon: Icons.more_horiz,
+                  label: 'More',
                 ),
               ],
             ),
@@ -373,21 +373,21 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   Widget _buildTab() {
     switch (_tabIndex) {
       case 0:
-        return _buildDashboardTab();
+        return _buildOverviewTab();
       case 1:
-        return _buildWorkersTab();
+        return _buildRoutesTab();
       case 2:
-        return _buildComebacksTabOM();
+        return _buildAlertsTab();
       case 3:
-        return _buildNotifyTabOM();
+        return _buildReportsTab();
       default:
-        return _buildProfileTabOM();
+        return _buildMoreTab();
     }
   }
 
-  // ── Dashboard tab ─────────────────────────────────────────────────────────────
+  // ── Overview tab ─────────────────────────────────────────────────────────────
 
-  Widget _buildDashboardTab() {
+  Widget _buildOverviewTab() {
     if (_loading) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
@@ -582,78 +582,72 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  // ── Workers tab ───────────────────────────────────────────────────────────────
+  // ── Routes tab ────────────────────────────────────────────────────────────────
 
-  Widget _buildWorkersTab() {
+  Widget _buildRoutesTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: Row(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Text(
+            'Live Routes',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             children: [
-              const Expanded(
-                child: Text(
-                  'Assigned Workers',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: -0.5,
+              RoleHeroCard(
+                accent: AppColors.manager,
+                eyebrow: 'OPERATIONS',
+                title: 'Active Service Routes',
+                subtitle: 'Real-time tracking of worker locations and route progress',
+                badgeLabel: 'Live',
+                showDot: true,
+              ),
+              const SizedBox(height: 20),
+              PrimaryButton(
+                label: 'View Live Worker Map',
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const OmWorkerMapScreen())),
+                accent: AppColors.manager,
+                icon: Icons.map_outlined,
+              ),
+              const SizedBox(height: 20),
+              if (_runs.isNotEmpty) ...[
+                const _DarkSectionLabel(text: "TONIGHT'S ACTIVE RUNS"),
+                const SizedBox(height: 8),
+                ..._runs.map((run) => _buildRunCard(run)),
+              ] else
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.route_outlined,
+                            size: 48, color: AppColors.textMuted),
+                        SizedBox(height: 12),
+                        Text(
+                          'No active routes',
+                          style: TextStyle(
+                              color: AppColors.textMuted, fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              GlowBadge(
-                label: '${_workers.length} total',
-                accent: AppColors.manager,
-                showDot: false,
-              ),
             ],
           ),
         ),
-        if (_loading)
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: const [
-                SkeletonCard(height: 66),
-                SizedBox(height: 10),
-                SkeletonCard(height: 66),
-              ],
-            ),
-          )
-        else if (_workers.isEmpty)
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.people_outline,
-                      size: 48, color: AppColors.textMuted),
-                  SizedBox(height: 12),
-                  Text(
-                    'No workers assigned',
-                    style: TextStyle(
-                        color: AppColors.textMuted, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _loadData,
-              color: AppColors.manager,
-              backgroundColor: AppColors.surface1,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                itemCount: _workers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, i) => _buildWorkerCard(_workers[i]),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -716,9 +710,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  // ── Comebacks tab ─────────────────────────────────────────────────────────────
+  // ── Reports tab ───────────────────────────────────────────────────────────────
 
-  Widget _buildComebacksTabOM() {
+  Widget _buildReportsTab() {
     final totalComebacks =
         _pendingComebacks + _acceptedComebacks + _completedComebacks;
     return Column(
@@ -730,7 +724,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             children: [
               const Expanded(
                 child: Text(
-                  "Today's Comebacks",
+                  'Reports & Metrics',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -740,7 +734,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ),
               ),
               GlowBadge(
-                label: '$totalComebacks total',
+                label: '$totalComebacks comebacks',
                 accent: totalComebacks > 0 ? AppColors.warning : AppColors.textMuted,
                 showDot: _pendingComebacks > 0,
               ),
@@ -751,6 +745,15 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             children: [
+              RoleHeroCard(
+                accent: AppColors.manager,
+                eyebrow: 'PERFORMANCE',
+                title: "Today's Service Metrics",
+                subtitle: 'Track comebacks, completion rates, and route efficiency',
+                badgeLabel: 'Ops Manager',
+                showDot: false,
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   StatTile(
@@ -766,24 +769,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(
-                        builder: (_) => const OmWorkerMapScreen())),
-                icon: const Icon(Icons.map_outlined, size: 16),
-                label: const Text('Live Worker Map'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.manager,
-                  side: const BorderSide(color: AppColors.manager),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              const SizedBox(height: 10),
               PrimaryButton(
-                label: 'View Full List',
+                label: 'View Full Report',
                 onPressed: () => Navigator.push(
                   context,
                   SharedAxisPageRoute(
@@ -791,13 +778,13 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   ),
                 ),
                 accent: AppColors.manager,
-                icon: Icons.list_alt_outlined,
+                icon: Icons.assessment_outlined,
               ),
               if (_comebackHistory.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 const _DarkSectionLabel(text: '7-DAY HISTORY'),
                 const SizedBox(height: 10),
-                ..._comebackHistory.map((h) => _buildHistoryCard(h)),
+                ..._comebackHistory.take(5).map((h) => _buildHistoryCard(h)),
               ],
             ],
           ),
@@ -806,16 +793,16 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  // ── Notify tab ────────────────────────────────────────────────────────────────
+  // ── Alerts tab ────────────────────────────────────────────────────────────────
 
-  Widget _buildNotifyTabOM() {
+  Widget _buildAlertsTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
           child: Text(
-            'Send Notifications',
+            'Resident Alerts',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -831,9 +818,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               RoleHeroCard(
                 accent: AppColors.manager,
                 eyebrow: 'COMMUNICATION',
-                title: 'Resident Alerts',
+                title: 'Send Alerts',
                 subtitle:
-                    'Send property-wide or individual notifications to residents',
+                    'Notify residents about service updates, changes, or emergencies',
                 badgeLabel: 'Ops Manager',
                 showDot: false,
               ),
@@ -860,7 +847,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.person_outline, size: 18),
-                label: const Text('Notify Specific Resident'),
+                label: const Text('Alert Specific Resident'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textSecondary,
                   side: const BorderSide(color: AppColors.border),
@@ -871,7 +858,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               ),
               if (_sentNotifications.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                const _DarkSectionLabel(text: 'RECENTLY SENT'),
+                const _DarkSectionLabel(text: 'RECENT ALERTS'),
                 const SizedBox(height: 10),
                 ..._sentNotifications.map((n) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -889,7 +876,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                n['title']?.toString() ?? 'Notification',
+                                n['title']?.toString() ?? 'Alert',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.textPrimary,
@@ -916,9 +903,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  // ── Profile tab ───────────────────────────────────────────────────────────────
+  // ── More tab ──────────────────────────────────────────────────────────────────
 
-  Widget _buildProfileTabOM() {
+  Widget _buildMoreTab() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       children: [
