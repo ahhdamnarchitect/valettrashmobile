@@ -191,19 +191,19 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   label: 'Overview',
                 ),
                 RoleNavItem(
-                  icon: Icons.apartment_outlined,
-                  activeIcon: Icons.apartment,
-                  label: 'Properties',
+                  icon: Icons.attach_money_outlined,
+                  activeIcon: Icons.attach_money,
+                  label: 'Financials',
                 ),
                 RoleNavItem(
                   icon: Icons.bar_chart_outlined,
                   activeIcon: Icons.bar_chart,
-                  label: 'Analytics',
+                  label: 'Reports',
                 ),
                 RoleNavItem(
-                  icon: Icons.settings_outlined,
-                  activeIcon: Icons.settings,
-                  label: 'Settings',
+                  icon: Icons.more_horiz,
+                  activeIcon: Icons.more_horiz,
+                  label: 'More',
                 ),
               ],
             ),
@@ -218,11 +218,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       case 0:
         return _buildOverviewTab();
       case 1:
-        return _buildPropertiesTab();
+        return _buildFinancialsTab();
       case 2:
-        return _buildAnalyticsTab();
+        return _buildReportsTab();
       default:
-        return _buildSettingsTab();
+        return _buildMoreTab();
     }
   }
 
@@ -388,9 +388,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  // ── Properties tab ────────────────────────────────────────────────────────────
+  // ── Reports tab ──────────────────────────────────────────────────────────────
 
-  Widget _buildPropertiesTab() {
+  Widget _buildReportsTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -573,53 +573,37 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  // ── Analytics tab ─────────────────────────────────────────────────────────────
+  // ── Financials tab ────────────────────────────────────────────────────────────
 
-  Widget _buildAnalyticsTab() {
-    if (_loading) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-        children: [
-          SkeletonCard(height: 200),
-          SizedBox(height: 16),
-          SkeletonCard(height: 160),
-        ],
-      );
-    }
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      children: [
-        RoleHeroCard(
-          accent: AppColors.owner,
-          eyebrow: 'ANALYTICS',
-          title: 'Portfolio Metrics',
-          subtitle: 'Occupancy and activation across all properties',
-          badgeLabel: 'Owner',
-          showDot: false,
-        ),
-        const SizedBox(height: 20),
-        const _OwnerSectionLabel(text: 'OCCUPANCY BY PROPERTY'),
-        const SizedBox(height: 12),
-        if (_properties.isEmpty)
-          Center(
-            child: Text(
-              'No data yet',
-              style:
-                  TextStyle(fontSize: 14, color: _c.textSecondary),
+  Widget _buildFinancialsTab() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.attach_money, size: 56, color: AppColors.textSecondary),
+            const SizedBox(height: 16),
+            const Text(
+              'Financials',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
-          )
-        else
-          ..._properties.map((p) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildOccupancyBar(p),
-              )),
-        const SizedBox(height: 20),
-        const _OwnerSectionLabel(text: 'CODE ACTIVATION RATE'),
-        const SizedBox(height: 12),
-        _buildActivationSummary(),
-      ],
+            const SizedBox(height: 8),
+            const Text(
+              'Stripe Connect payouts and revenue\nreporting will appear here.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
     );
   }
+
 
   Widget _buildOccupancyBar(Map<String, dynamic> p) {
     final units = p['unit_count'] as int? ?? 0;
@@ -779,9 +763,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  // ── Settings tab ──────────────────────────────────────────────────────────────
+  // ── More tab ──────────────────────────────────────────────────────────────────
 
-  Widget _buildSettingsTab() {
+  Widget _buildMoreTab() {
     final initial = _email.isNotEmpty ? _email[0].toUpperCase() : 'O';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,7 +773,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
           child: Text(
-            'Settings',
+            'More',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
