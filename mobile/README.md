@@ -1,18 +1,18 @@
 # Relaxed Living Valet — Mobile App
 
-Flutter app for the full valet trash operation: residents, workers, property managers, operations managers, owners, and admins all have their own dashboard. This file is your guide to running the app, testing every role, and getting it into the App Store and Google Play.
+Flutter app for the full valet trash operation. Six role-based dashboards — resident, worker, operations manager, property manager, owner, and super admin — all wired to live Supabase data. Feature-complete and brand-aligned to the RLV design sheet. Ready for Stripe integration and app store packaging.
 
 ---
 
 ## Quick Start
 
-**Prerequisites:** Flutter 3.41.9 installed, `.env` file in this directory (already committed — contains Supabase credentials).
+**Prerequisites:** Flutter 3.41.9, `.env` file in this directory (already committed — contains Supabase anon key).
 
 ```powershell
-cd C:\path\to\valettrashmobile\mobile
+cd mobile
 flutter pub get
 flutter run -d chrome --no-pub
-# or on a specific port:
+# or on a fixed port:
 flutter run -d web-server --web-port 8091 --no-pub
 ```
 
@@ -22,19 +22,15 @@ App opens at `http://localhost:8091`.
 
 ## Test Accounts
 
-Use these to test every role. Log in at the sign-in screen with email + password.
-
-| Email | Password | Role | What you see |
+| Email | Password | Role | Dashboard |
 |---|---|---|---|
 | `relaxedlivingtx@gmail.com` | `RelaxedLiving2026!` | Super Admin | Admin Portal — full system control |
-| `adam.grant824+om@gmail.com` | `TestPass123!` | Operations Manager | OM Dashboard — workers, pickups, violations |
-| `adam.grant824+pm@gmail.com` | `TestPass123!` | Property Manager | PM Dashboard — property reports, CSV export |
-| `adam.grant824+worker@gmail.com` | `TestPass123!` | Worker / Driver | Worker Dashboard — route, earnings, map |
+| `adam.grant824+om@gmail.com` | `TestPass123!` | Operations Manager | OM Dashboard — communities, routes, on-time % |
+| `adam.grant824+pm@gmail.com` | `TestPass123!` | Property Manager | PM Dashboard — properties, requests, announcements |
+| `adam.grant824+worker@gmail.com` | `TestPass123!` | Worker / Driver | Worker Dashboard — route, stops, earnings |
 | `adam.grant824+res2@gmail.com` | `TestPass123!` | Resident | Resident Dashboard — unit 104, Sunset Gardens |
 
-**Test property:** Sunset Gardens  
-**Test unit:** 104  
-**Resident invite code:** `WELCOME104`
+**Test property:** Sunset Gardens · **Test unit:** 104 · **Invite code:** `WELCOME104`
 
 ---
 
@@ -42,105 +38,86 @@ Use these to test every role. Log in at the sign-in screen with email + password
 
 ### Super Admin (`relaxedlivingtx@gmail.com`)
 
-The business owner account. Five-tab admin portal:
+Business owner account. Five-tab admin portal:
 
-1. **Overview** — system-wide stats: total pickups, active workers, open violations, properties served
-2. **Workers** — list of all driver accounts; view individual earnings and route history
-3. **Properties** — all properties in the system; pickup completion rates per property
-4. **Residents** — all resident accounts across every property
-5. **Invite Codes** — generate and manage invite codes for resident signup
-
-**To test:** Log in, tap through all 5 tabs. Invite codes tab lets you create new codes for a property.
+1. **Users** — all accounts with role pills; tap to edit role, name, email
+2. **Properties** — all properties; configure service window and comeback fee
+3. **Residents** — active unit assignments; filter by property
+4. **Concerns** — resident-submitted concerns; filter by Open / In Review / Resolved
+5. **Tools** — Invite Codes sub-screen, Comeback Requests, Worker Assignments, Sign Out
 
 ---
 
 ### Operations Manager (`adam.grant824+om@gmail.com`)
 
-Manages the nightly operation. Dashboard tabs:
+Manages the nightly operation. Five tabs:
 
-1. **Home** — tonight's pickup summary, active workers on duty
-2. **Workers** — worker list with status (on route / off)
-3. **Map** — real-time worker location map (requires location permission on native; web uses browser geolocation)
-4. **Violations** — all reported violations with photo evidence
-5. **Profile** — change password
+1. **Overview** — "Operations Overview" header with Today filter; Communities and Routes counts; large On-Time % and Missed count; 7-day Service Completion % chart; tonight's runs list
+2. **Routes** — per-property nightly run detail with completion status
+3. **Alerts** — sent notification history
+4. **Reports** — comeback request history (7 days)
+5. **More** — Live Worker Map (real-time GPS), Send Notification, sign out
 
-**To test:** Log in and check the map tab. Violations tab shows any violations filed by workers.
+**To test:** Overview tab shows live metrics. More → Live Worker Map shows the worker dot when the worker account is on duty and sharing location.
 
 ---
 
 ### Property Manager (`adam.grant824+pm@gmail.com`)
 
-Property-level reporting. Dashboard tabs:
+Property-level oversight. Four tabs:
 
-1. **Overview** — completion rate, missed pickups, violations for their property
-2. **Compliance Report** — filter by date range, export as CSV
-3. **Activity** — pickup-by-pickup history
-4. **Profile** — change password
+1. **Dashboard** — "Property Manager View" with All Properties filter; Open Requests count; Work Orders placeholder; recent community announcements list; Send Announcement button; compliance % and satisfaction score
+2. **Properties** — per-property unit count, resident count, violation count, invite codes
+3. **Requests** — recent nightly runs with status badges
+4. **More** — Compliance Report (date range filter, CSV export), change password, sign out
 
-**To test:** Compliance Report tab → set a date range → tap Export CSV. On web this downloads directly; on native it will use the share sheet.
+**To test:** Dashboard → Send Community Announcement → residents see it in their Community Updates. More → Compliance Report → set date range → Export CSV (web download; native share sheet when built for device).
 
 ---
 
 ### Worker / Driver (`adam.grant824+worker@gmail.com`)
 
-Field app for nightly pickup. Tabs:
+Field app for nightly pickup. Five tabs:
 
-1. **Route** — tonight's unit list; tap a unit to mark pickup complete or report a missed pickup
-2. **Comeback Requests** — residents who requested a second pickup attempt
-3. **Map** — worker's own location broadcast (shows on OM map)
-4. **Earnings** — nightly and weekly pay summary
-5. **Profile** — change password
+1. **Route** — "Hello [name] / You have N stops today" header; progress donut with center %; Next Stop card with unit number; Clock In / Clock Out button; Share Location; View Map
+2. **Stops** — full stop list; tap to mark complete (photo optional) or flag as comeback
+3. **Scan** — QR code scan (unit confirmation)
+4. **Messages** — direct messages with OM (real-time)
+5. **More** — Earnings screen (weekly/monthly hours from clock events); change password; sign out
 
-**To test:** Route tab → mark a unit complete. Check the OM dashboard map to see the worker dot move.
+**To test:** Route tab → Clock In → mark a stop complete → check OM's Live Worker Map.
 
 ---
 
 ### Resident (`adam.grant824+res2@gmail.com`)
 
-What apartment residents see. Tabs:
+What apartment residents see. Four tabs:
 
-1. **Home** — tonight's pickup status, countdown to pickup window, last pickup confirmation
-2. **Comeback Request** — request a second pickup attempt if they missed the window (1 free per month, paid after)
-3. **Concerns** — submit a general concern or complaint
-4. **Report Missed Pickup** — flag that a scheduled pickup didn't happen
-5. **Profile** — change password
+1. **Home** — "Good morning / [Property Name] ▾" header with bell icon; Next Service time + On Schedule / Active / All Clear status; Request a Comeback card (1 free/month); Rate Your Service card; Community Updates feed
+2. **Services** — extra services screen
+3. **Messages** — (placeholder)
+4. **Profile** — vacation hold toggle; change password; sign out
 
-**New resident signup flow:** On the sign-in screen, tap "Create account" → enter email + invite code (`WELCOME104` for Sunset Gardens unit 104) → account is created and auto-linked to the property.
+**New resident signup:** Sign-in screen → "Don't have an account? Sign up" → email + invite code (`WELCOME104` for Sunset Gardens unit 104).
 
 ---
 
 ### Auth Features (all roles)
 
-- **Forgot password:** On the sign-in screen, tap "Forgot password?" → enter email → receive reset link → tap link → set new password. Works on web and mobile (deep link: `com.relaxedliving.valet://login-callback`).
-- **Change password:** Every dashboard has a "Change Password" button in the Profile tab. Sends a reset email — same flow as above.
-- **Password visibility:** Eye icon on all password fields to show/hide.
+- **Forgot password:** Sign-in screen → "Forgot password?" → email → reset link → new password. Deep link: `com.relaxedliving.valet://login-callback`
+- **Change password:** Profile tab on every dashboard → "Change Password" button
+- **Password visibility:** Eye icon on all password fields
+- **Social login:** Apple and Google OAuth on sign-in screen
 
 ---
 
 ## Getting to the App Store and Google Play
 
-This is the checklist of what's left before submission. The app is feature-complete — what remains is app store logistics.
+The app is feature-complete. What remains is store logistics.
 
-### Step 1 — Replace the App Icon
+### Android (Google Play)
 
-The current icon is a placeholder (green circle with "RL"). You need a final 1024×1024 PNG with no alpha channel.
-
-1. Drop your final icon at `assets/icon/app_icon.png` (overwrite the placeholder)
-2. Drop a foreground-only version (white logo, transparent background) at `assets/icon/app_icon_foreground.png`
-3. Run:
-   ```powershell
-   flutter pub run flutter_launcher_icons
-   flutter pub run flutter_native_splash:create
-   ```
-4. This regenerates all Android mipmap sizes, the iOS icon set, and the splash screens automatically.
-
----
-
-### Step 2 — Android (Google Play)
-
-**Build the release bundle:**
-
-Requires Android SDK installed (Android Studio or standalone SDK).
+Requires Android SDK (Android Studio or standalone).
 
 ```bash
 flutter build appbundle
@@ -148,7 +125,7 @@ flutter build appbundle
 
 Output: `build/app/outputs/bundle/release/app-release.aab`
 
-The signing keystore is at `android/upload-keystore.jks`. The signing config is already wired into `android/app/build.gradle.kts` — it reads credentials from `android/key.properties`:
+The signing keystore is at `android/upload-keystore.jks`. Already wired into `android/app/build.gradle.kts` via `android/key.properties`:
 
 ```
 storePassword=RLValet2026!Key
@@ -157,80 +134,70 @@ keyAlias=upload
 storeFile=../upload-keystore.jks
 ```
 
-**If `key.properties` doesn't exist** (e.g., fresh clone), create it from the template:
-```powershell
-copy android\key.properties.template android\key.properties
-# then fill in the real values above
-```
-
 **Submit to Google Play:**
-1. Go to [Google Play Console](https://play.google.com/console) → Create app
-2. Fill in store listing: title, description, screenshots (multiple densities), privacy policy URL
-3. Upload the `.aab` under Release → Production (or start with Internal Testing)
-4. Set content rating, target audience, data safety form
-5. Submit for review (typically 1–3 days)
+1. [Google Play Console](https://play.google.com/console) → Create app
+2. Store listing: title, description, screenshots, privacy policy URL
+3. Upload the `.aab` under Release → Internal Testing (then promote to Production)
+4. Content rating, data safety form → Submit (1–3 day review)
 
 ---
 
-### Step 3 — iOS (App Store)
+### iOS (App Store)
 
 **Requires macOS + Xcode + Apple Developer account ($99/year).**
 
-The iOS project is fully configured (`ios/Runner/Info.plist`, bundle ID `com.relaxedliving.valet`, privacy usage strings, URL scheme for deep links). You just need to sign it.
+iOS project is fully configured — bundle ID `com.relaxedliving.valet`, privacy strings, URL scheme for deep links.
 
 1. Open `ios/Runner.xcworkspace` in Xcode (not `.xcodeproj`)
-2. Select the Runner target → Signing & Capabilities
-3. Set your Apple Developer Team
-4. Xcode will provision the app automatically
-5. Build the IPA:
+2. Runner target → Signing & Capabilities → set your Apple Developer Team
+3. Xcode provisions automatically
+4. Build:
    ```bash
    flutter build ipa
    ```
-6. Upload via Xcode Organizer or `xcrun altool`
+5. Upload via Xcode Organizer or `xcrun altool`
 
 **Submit to App Store Connect:**
-1. Go to [App Store Connect](https://appstoreconnect.apple.com) → New App
+1. [App Store Connect](https://appstoreconnect.apple.com) → New App
 2. Bundle ID: `com.relaxedliving.valet`
-3. Fill store listing: screenshots (6.7" iPhone required, 12.9" iPad optional), description, keywords, age rating, privacy policy URL
-4. Submit for review (typically 24–48 hours)
+3. Screenshots: 6.7" iPhone (required), 12.9" iPad (optional); description, keywords, age rating, privacy policy
+4. Submit for review (24–48 hours)
 
 ---
 
-### Step 4 — Production Supabase Config
+### Production Supabase Config
 
-Right now the Supabase project is pointed at `localhost:8091` for auth redirects — fine for development, wrong for production.
+Currently pointed at `localhost:8091` — update before going live:
 
-When you have a real domain or TestFlight/Play Store internal URL:
-
-1. Go to [Supabase Dashboard](https://supabase.com/dashboard/project/airpwzzkyjqzeeqizvft) → Auth → URL Configuration
-2. Update **Site URL** from `http://localhost:8091` to your production URL
-3. Add your production URL to **Redirect URLs**
-4. Enable a real email provider (Resend or SendGrid) under Auth → SMTP Settings — right now email confirmation is disabled and password reset emails go through Supabase's default sender (limited rate)
+1. [Supabase Dashboard](https://supabase.com/dashboard/project/airpwzzkyjqzeeqizvft) → Auth → URL Configuration
+2. **Site URL** → your production domain
+3. **Redirect URLs** → add production domain + keep `com.relaxedliving.valet://login-callback`
+4. Auth → SMTP Settings → enable Resend or SendGrid (email confirmation is disabled in dev)
 
 ---
 
-### Step 5 — App Store / Play Store Listing Assets Needed
+### Store Listing Assets
 
 | Asset | iOS | Android |
 |---|---|---|
-| Screenshots | 6.7" iPhone (required), 12.9" iPad (optional) | Phone + 7" tablet + 10" tablet |
-| App icon | 1024×1024 PNG, no alpha | 512×512 PNG |
+| Screenshots | 6.7" iPhone (required), 12.9" iPad (optional) | Phone + tablet |
+| App icon | 1024×1024 PNG, no alpha ✅ done | 512×512 PNG ✅ done |
 | Short description | 30 chars | 80 chars |
 | Full description | 4000 chars | 4000 chars |
 | Privacy policy URL | Required | Required |
-| Keywords | 100 chars total | N/A (use description) |
 | Age rating | Fill questionnaire | Fill content rating |
 
 ---
 
-## What's Not Yet Built (Future Features)
+## What's Not Yet Built (Next Sprint)
 
-These are wired up as placeholder UI but not fully functional:
-
-- **Stripe payments** — in-app purchase for paid comeback requests (beyond the 1 free/month). Needs Stripe account + webhook secret.
-- **Push notifications** — FCM for Android, APNs for iOS. Defer until the app is in TestFlight / Play internal testing so you have a real device token.
-- **Worker GPS on native** — the map currently uses browser geolocation (web only). For native iOS/Android, swap to the `geolocator` package.
-- **CSV export on native** — the PM compliance report export uses a web-only download method. For native, swap to `path_provider` + `share_plus`.
+| Feature | Status | What's needed |
+|---|---|---|
+| **Stripe paid comebacks** | Placeholder UI ready | Stripe account + webhook secret → wire into `ResidentComebackRequestScreen` paid path |
+| **Push notifications** | Not built | FCM (Android, free) + APNs via Apple Developer account. Defer until TestFlight / Play internal testing |
+| **Worker GPS on native** | Web only | Swap `dart:html` geolocation → `geolocator` package for iOS/Android builds |
+| **CSV export on native** | Web only | Swap `dart:html` download → `path_provider` + `share_plus` for iOS/Android builds |
+| **Work Orders** | Placeholder (shows 0) | No `work_orders` table — add in a future sprint if needed |
 
 ---
 
@@ -243,14 +210,15 @@ These are wired up as placeholder UI but not fully functional:
 | Region | AWS us-east-2 |
 | Dashboard | https://supabase.com/dashboard/project/airpwzzkyjqzeeqizvft |
 
-To access the Supabase dashboard (database, auth users, storage, logs), you need to be added to the Supabase project or have the project transferred to your account. Ask the previous developer to add you as a project member or transfer ownership.
+To access the dashboard (database, auth users, storage, logs): ask to be added as a project member or have ownership transferred to your Supabase account.
 
 ---
 
 ## Android Signing Key
 
-The release keystore is at `android/upload-keystore.jks`.
+Keystore at `android/upload-keystore.jks` — **do not lose this file.**
 
 - **Alias:** `upload`
 - **Password:** `RLValet2026!Key`
-- **Do not lose this file.** If you lose the upload keystore, Google Play allows one keystore reset per app lifetime — contact Play support. Back it up to a password manager or secure drive.
+
+If the keystore is ever lost, Google Play allows one keystore reset per app lifetime. Back it up to a password manager or secure drive now.

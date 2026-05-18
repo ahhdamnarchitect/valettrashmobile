@@ -52,3 +52,6 @@ All prior work is complete and documented in `brain/change_log.md`. Summary:
 | 8 | Comeback request flow, resident concerns, admin portal (5 tabs), admin RLS |
 | 9 | super_admin account, password reset + visibility toggle (all dashboards), Supabase URL config |
 | 10 | Owner routing fix, Android + iOS platform setup, permissions, signing, icons, splash, deep links |
+| 11 | Owner handoff README rewrite, keystore committed |
+| 12 | Full dashboard rebuild — RLV brand spec, BentoCard system, fl_chart, realtime DMs |
+| 13 | Brand mockup pixel-alignment (all 5 dashboards), comeback card restored, lint cleanup |
