@@ -170,10 +170,13 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
   Widget _buildLogo() {
     return Column(
       children: [
-        Image.asset(
-          'assets/icon/app_icon.png',
-          width: 80,
-          height: 80,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            'assets/icon/app_icon.png',
+            width: 80,
+            height: 80,
+          ),
         ),
         const SizedBox(height: 16),
         Text(
