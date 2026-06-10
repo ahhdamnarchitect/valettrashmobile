@@ -5,6 +5,14 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-05-19 — Go-live process started (`pending commit`)
+
+- **`brain/go_live_checklist.md`** — phased plan: demo → security → pilot → stores
+- **`014_launch_rls_hardening.sql`** — RLS re-enable, `is_owner_admin()`, satellite policies
+- **`supabase/tests/rls_role_smoke.sql`** — verification queries
+- **`mobile/.env.example`** — staging/prod key separation notes
+- Hosted apply via MCP timed out — apply 012–014 manually in Supabase SQL editor
+
 ### 2026-05-19 — Owner/Admin two-way quick switch (`8b5b8aa`)
 
 - Added top quick switch bars on both dashboards:

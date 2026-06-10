@@ -1,91 +1,74 @@
 # Next Steps
 
-## Before Submitting to Stores (action required from you)
+## 🚀 Go-Live — Active (see `brain/go_live_checklist.md`)
 
-- [x] **Final app icon** — RLV logo installed at `mobile/assets/icon/`; launcher icons + splash regenerated (May 2026)
-- [ ] **iOS signing** — requires macOS + Xcode + Apple Developer account ($99/yr):
-  1. Open `ios/Runner.xcworkspace` in Xcode
-  2. Set your Apple team under Signing & Capabilities
-  3. `flutter build ipa` to produce the `.ipa` for App Store Connect
-- [ ] **Android release build** — keystore already configured, run from a machine with Android SDK:
-  ```
-  flutter build appbundle
-  ```
-  Upload the `.aab` to Google Play Console
-- [x] **Apply migration `007_service_requests.sql`** — applied live May 18 via Supabase MCP (also added `owner` to `user_role` enum). Test: resident Extra Services submit → Admin/Owner inbox.
-- [x] **Apply migration `008_resident_comeback_balance_service_time.sql`** — applied live May 18 via Supabase MCP (`resident_comeback_balance_service_time`).
-- [x] **Apply migration `009_staff_invites.sql`** — applied live May 19 via Supabase MCP (`staff_invites`).
-- [x] **Apply migration `010_property_billing_metrics.sql`** — applied live May 19 (`monthly_fee_per_door`, `minimum_billable_occupancy_percent`).
-- [x] **Apply migration `011_property_door_counts.sql`** — applied live May 19 (`billing_total_doors`, `billing_occupied_doors`).
-- [ ] **Apply migration `013_unify_owner_role.sql`** — set `relaxedlivingtx@gmail.com` to `owner`; optional +owner alias
-- [ ] **Owner login QA** — Staff sign-in → Owner dashboard → More → Admin Portal
-- [ ] **Owner/Admin switch QA** — top switch bars work both directions without re-login
-- [ ] **Apply migration `012_workforce_labor.sql`** — `hourly_rate`, clock_events/worker_locations policies, `set_worker_hourly_rate` RPC.
-- [ ] **Workforce QA** — worker clock in → OM Workforce shows ON DUTY; owner Financials shows est labor $; edit driver hourly rate.
-- [ ] **Property Billing Rates QA** — enter total/occupied/$ for Riverside Lofts; verify owner + PM dashboards match.
-- [ ] **Staff invite QA** — super admin generates code → Staff signup → lands on correct role dashboard (sign out/in if cached wrong role).
-- [ ] **Owner Financials QA** — per-property revenue/door, export CSV, Stripe payout section when data exists.
-- [ ] **PM occupancy billing QA** — vacant/occupied per unit; billable ≥ 85% of total units; export unit codes CSV.
-- [ ] **Onboard a property end-to-end** — follow `brain/resident_invite_workflow.md` (units → codes → PM export → resident signup).
-- [ ] **Re-enable RLS on core tables** — MCP security advisor: 19 `public` tables have RLS off; `users`, `properties`, `resident_units`, `missed_pickup_requests`, `worker_assignments` have policies defined but RLS disabled. Run remediation from dashboard Database Linter or match repo migration SQL; test resident signup + admin flows after each batch.
-- [ ] **Production Supabase config** — when deploying to a real domain:
-  - Update Site URL from `http://localhost:8091` to `https://yourdomain.com`
-  - Add `https://yourdomain.com` to Redirect URLs
-  - Enable a real email provider (Resend / SendGrid) for confirmation and reset emails
-- [ ] **App Store / Play Store listing** — screenshots (6.7" iPhone, 12.9" iPad for iOS; multiple densities for Android), app description, keywords, age rating, privacy policy URL
+### Phase 0 — This week
+- [ ] **Apply migration `012_workforce_labor.sql`** on hosted Supabase
+- [ ] **Apply migration `013_unify_owner_role.sql`** on hosted Supabase
+- [ ] **Apply migration `014_launch_rls_hardening.sql`** on hosted Supabase
+- [ ] Run **`supabase/tests/rls_role_smoke.sql`** — zero tables without RLS
+- [ ] **Owner/Admin switch QA** — top bars both directions
+- [ ] **Workforce QA** — clock in → OM ON DUTY → owner labor $
+- [ ] **Resident signup QA** — invite code end-to-end
+- [ ] **PM property scope QA** — invite codes only for assigned properties after RLS
+
+### Phase 1 — Security (pilot blocker)
+- [ ] Production Supabase Site URL + Redirect URLs (not localhost)
+- [ ] Email provider for password reset (Resend/SendGrid)
+- [ ] Remove test accounts from production project
+- [ ] Stripe Connect webhooks live
+
+### Phase 2 — Pilot (2–4 properties)
+- [ ] Onboard property per `brain/resident_invite_workflow.md`
+- [ ] Error monitoring (Sentry/Crashlytics) in release builds
+- [ ] Support runbook for owner/PM
+
+### Phase 3 — App stores
+- [ ] `flutter build appbundle --release` (Android)
+- [ ] `flutter build ipa --release` (iOS — requires Mac)
+- [ ] Privacy policy URL + store listings
+- [ ] Native GPS (`geolocator`) + CSV `share_plus`
+
+---
+
+## Before Submitting to Stores (reference)
+
+- [x] **Final app icon** — RLV logo installed (May 2026)
+- [ ] **iOS signing** — macOS + Xcode + Apple Developer ($99/yr)
+- [ ] **Android release build** — `flutter build appbundle`
+- [x] Migrations **007–011** applied live
+- [ ] Migrations **012–014** apply on hosted
+- [ ] **Re-enable RLS** — migration 014 + smoke test
+- [ ] **App Store / Play Store listing** — screenshots, privacy policy
 
 ---
 
 ## QA (in progress)
 
-- [ ] **Resident dashboard retest** — use checklist in `brain/current_state.md` (tabs, bell, countdown, clock-in status, comebacks, extra service → inbox)
-- [x] **Commit & push** staff invites — `2a996f7` on `main` (May 19, 2026)
-- [x] **Commit & push** owner financials + PM billing + invite playbook — `b41ae6a` on `main` (May 19, 2026)
-- [x] **Commit & push** billing door counts UI — `48ec1cf` on `main` (May 19, 2026)
-- [x] **Commit & push** workforce + owner labor — `401b13e` on `main` (May 19, 2026)
-- [x] **Commit & push** unify owner login — `eb29777` on `main` (May 19, 2026)
-- [x] **Commit & push** owner/admin two-way quick switch — `8b5b8aa` on `main` (May 19, 2026)
+- [ ] **Resident dashboard retest** — `brain/current_state.md` checklist
+- [x] **Commit & push** owner/admin two-way switch — `8b5b8aa` / `c5af2db` (May 19, 2026)
+- [ ] **Commit & push** go-live checklist + RLS migration 014 — this session
 
 ---
 
-## Next Features (prioritized)
+## Next Features (after pilot)
 
-- [x] **Super admin: edit `monthly_fee_per_door` and 85% per property** — Tools → Property Billing Rates; also on Add Property form
-- [ ] **Bulk unit import + bulk invite code generate** — CSV upload for apartment unit lists
-- [ ] **Stripe Connect webhooks** — populate `contractor_payouts`, subscriptions, invoices from live Stripe
-- [ ] **Stripe paid comeback requests + pickup packs** — `ResidentComebackRequestScreen` and `BuyExtraPickupsSection` record DB state; wire Stripe Checkout + webhook. Blocked on Stripe account + webhook secret.
-- [ ] **Push notifications** — defer until native build is in TestFlight / Play Store internal testing:
-  - Android: FCM (Firebase Cloud Messaging) — free
-  - iOS: APNs via FCM or OneSignal — requires Apple Developer account
-- [ ] **Worker location on native** — currently uses `dart:html` (web only). Swap to `geolocator` package for iOS/Android builds
-- [ ] **Steps / activity tracking** — optional pedometer on worker app; OM summary only (deferred)
-- [ ] **CSV export on native** — `PmComplianceReportScreen` uses `dart:html` for download. Swap to `path_provider` + `share_plus` for native builds
+- [ ] Bulk unit import + bulk invite code generate
+- [ ] Stripe paid comebacks + pickup packs checkout
+- [ ] Push notifications (FCM/APNs)
+- [ ] Steps / activity tracking (deferred)
 
 ---
 
 ## Technical Debt
 
-- [ ] `supabase_flutter` v1 → v2 upgrade — **BLOCKED** in this environment (missing transitive deps). Try on a machine with full internet/VPN access
-- [ ] `main_simple.dart` — unclear purpose, remove or document
-- [ ] Integration tests for invite code flow
-- [ ] Confirm `AdminDashboardScreen` RLS policies cover all edge cases with real data at scale
+- [ ] `supabase_flutter` v1 → v2 upgrade
+- [ ] `main_simple.dart` — remove or document
+- [ ] Integration tests for invite + RLS regression
+- [ ] Tighten `notifications` INSERT policy (currently permissive in 004)
 
 ---
 
 ## Completed Sessions (summary)
 
-All prior work is complete and documented in `brain/change_log.md`. Summary:
-
-| Session | Key deliverable |
-|---|---|
-| 1–3 | Initial setup, Supabase schema, seed data, all 6 dashboards connected to real data |
-| 4 | Auth bug fixes, OM/PM/Worker test accounts, role routing |
-| 5–7 | Dark redesign (all dashboards), violation report, map, worker earnings, vacation hold, CSV export, realtime worker map |
-| 8 | Comeback request flow, resident concerns, admin portal (5 tabs), admin RLS |
-| 9 | super_admin account, password reset + visibility toggle (all dashboards), Supabase URL config |
-| 10 | Owner routing fix, Android + iOS platform setup, permissions, signing, icons, splash, deep links |
-| 11 | Owner handoff README rewrite, keystore committed |
-| 12 | Full dashboard rebuild — RLV brand spec, BentoCard system, fl_chart, realtime DMs |
-| 13 | Brand mockup pixel-alignment (all 5 dashboards), comeback card restored, lint cleanup |
-| 14 | Resident mock home layout, Support nav, `service_requests` + owner/admin inboxes |
-| 15 | Comeback rules (1 free/mo, banked packs), clock-in worker status, tab/grid fixes, date+time service requests, migrations 007+008 live |
+See `brain/change_log.md`. Latest: owner/admin switch (`8b5b8aa`), workforce labor (`401b13e`), unified owner login (`eb29777`).

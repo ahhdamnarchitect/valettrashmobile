@@ -1,14 +1,14 @@
 # Current State
 
 ## Current Objective
-**Owner login + workforce + billing QA** — unified owner login, OM timecards, owner labor $, door-count billing. Repo migrations through **013**; apply **012** and **013** on hosted Supabase if not yet run. Flutter web on port **8091**.
+**Go-live readiness** — security sprint (RLS), pilot QA, then store release. Repo migrations through **014**. Master plan: **`brain/go_live_checklist.md`**.
 
 ## Resume Here (next session)
-1. **Owner login** — Staff → `relaxedlivingtx@gmail.com` / `RelaxedLiving2026!` → Owner dashboard (see `brain/test_credentials.md`). Run `013_unify_owner_role.sql` if role still `super_admin` only.
-2. **Apply migrations `012` + `013`** on Supabase (labor rates + owner role).
-3. **OM** → **Workforce & Timecards**; **Owner** → Financials → **Manage rates**.
-4. **Stripe Connect** — webhooks for payouts/MRR.
-5. Blockers: RLS on ~19 tables, Stripe checkout for paid comebacks, iOS signing.
+1. **Apply migrations `012`–`014`** on Supabase SQL editor (MCP timed out May 27 — apply manually).
+2. Run **`supabase/tests/rls_role_smoke.sql`** — confirm zero tables without RLS.
+3. **Full role QA** per Phase 0 in `brain/go_live_checklist.md`.
+4. **Stripe Connect** webhooks + production auth URLs when pilot property is chosen.
+5. Blockers: hosted migrations 012–014 pending apply; Stripe checkout; iOS signing.
 
 ## Run the App
 ```powershell
@@ -40,6 +40,7 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 | `property_door_counts` | `011_property_door_counts.sql` | `billing_total_doors`, `billing_occupied_doors` (manual entry per complex) |
 | `workforce_labor` | `012_workforce_labor.sql` | `users.hourly_rate`, clock_events/worker_locations RLS, `set_worker_hourly_rate` RPC |
 | `unify_owner_role` | `013_unify_owner_role.sql` | `relaxedlivingtx@gmail.com` → `owner`; optional `+owner` alias |
+| `launch_rls_hardening` | `014_launch_rls_hardening.sql` | Re-enable RLS, `is_owner_admin()`, satellite table policies |
 
 ### Billing rules (app + DB)
 - **Inputs (owner via Admin Portal):** total doors, occupied doors, $/billable door/month on **Property Billing Rates**.
@@ -106,6 +107,11 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 - **OM** — `OmWorkforceScreen`: on-duty, week hours, shift history, link to map.
 - **Owner** — Financials labor tiles; `OwnerWorkforceScreen`: edit hourly rate via RPC, est week/month labor $.
 - **Helper** — `mobile/lib/core/workforce/clock_hours.dart`.
+
+### Go-live artifacts
+- **`brain/go_live_checklist.md`** — phased launch plan (demo → pilot → stores)
+- **`supabase/migrations/014_launch_rls_hardening.sql`** — RLS hardening
+- **`supabase/tests/rls_role_smoke.sql`** — post-migration verification
 
 ### Key new files
 - `mobile/lib/core/billing/property_billing.dart`

@@ -65,6 +65,11 @@
 - **Impact**: `brain/resident_invite_workflow.md`; PM export; admin `use_count` column fix.
 
 ### 2026-05-19
+- **Decision**: **Go-live phased** — demo now → security sprint (RLS 014) → pilot → stores; tracked in `brain/go_live_checklist.md`.
+- **Reason**: Client wants operational launch with security, not just feature-complete UI.
+- **Impact**: Migration `014_launch_rls_hardening.sql`, `rls_role_smoke.sql`, Phase 0–4 checklist.
+
+### 2026-05-19
 - **Decision**: Keep **Owner** and **Admin Portal** as separate screens with **two-way quick switching** (Owner → Admin and Admin → Owner).
 - **Reason**: Preserve screen separation while removing navigation friction during live operations and setup tasks.
 - **Alternatives Considered**: Merge dashboards into one screen — rejected to avoid overloading a single UI.
