@@ -5,7 +5,7 @@ Date | Change | Files Modified | Reason
 
 ---
 
-### 2026-05-19 — Go-live process started (`pending commit`)
+### 2026-05-19 — Go-live process started (`2f0c9b8`)
 
 - **`brain/go_live_checklist.md`** — phased plan: demo → security → pilot → stores
 - **`014_launch_rls_hardening.sql`** — RLS re-enable, `is_owner_admin()`, satellite policies

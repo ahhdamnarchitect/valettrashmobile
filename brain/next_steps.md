@@ -47,7 +47,7 @@
 
 - [ ] **Resident dashboard retest** — `brain/current_state.md` checklist
 - [x] **Commit & push** owner/admin two-way switch — `8b5b8aa` / `c5af2db` (May 19, 2026)
-- [ ] **Commit & push** go-live checklist + RLS migration 014 — this session
+- [x] **Commit & push** go-live checklist + RLS migration 014 — `2f0c9b8` on `main` (May 19, 2026)
 
 ---
 
