@@ -5,6 +5,10 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-05-27 — Project handoff document (`pending commit`)
+
+- **`brain/project_handoff.md`** — consolidated chat history, infra, roles, features, migrations, go-live order
+
 ### 2026-05-19 — Go-live process started (`2f0c9b8`)
 
 - **`brain/go_live_checklist.md`** — phased plan: demo → security → pilot → stores

@@ -4,7 +4,8 @@
 **Go-live readiness** — security sprint (RLS), pilot QA, then store release. Repo migrations through **014**. Master plan: **`brain/go_live_checklist.md`**.
 
 ## Resume Here (next session)
-1. **Apply migrations `012`–`014`** on Supabase SQL editor (MCP timed out May 27 — apply manually).
+1. Read **`brain/project_handoff.md`** for full context from all chat sessions.
+2. **Apply migrations `012`–`014`** on Supabase SQL editor (MCP timed out May 27 — apply manually).
 2. Run **`supabase/tests/rls_role_smoke.sql`** — confirm zero tables without RLS.
 3. **Full role QA** per Phase 0 in `brain/go_live_checklist.md`.
 4. **Stripe Connect** webhooks + production auth URLs when pilot property is chosen.
@@ -124,8 +125,8 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 ### Recent GitHub (`main`)
 | Commit | Summary |
 |---|---|
-| `TBD` | Owner/Admin two-way quick switch (top bars + admin tools link) |
-| `eb29777` | Unify owner + super_admin → Owner dashboard |
+| `8b5b8aa` | Owner/Admin two-way quick switch |
+| `2f0c9b8` | Go-live checklist + RLS migration 014 |
 | `401b13e` | OM workforce timecards + owner labor estimates |
 | `48ec1cf` | Billing door counts UI |
 
