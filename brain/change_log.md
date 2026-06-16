@@ -5,7 +5,7 @@ Date | Change | Files Modified | Reason
 
 ---
 
-### 2026-05-27 — Project handoff document (`pending commit`)
+### 2026-05-27 — Project handoff document (`1955595`)
 
 - **`brain/project_handoff.md`** — consolidated chat history, infra, roles, features, migrations, go-live order
 
