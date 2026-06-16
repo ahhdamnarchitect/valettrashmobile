@@ -4,8 +4,7 @@
 **Go-live readiness** — security sprint (RLS), pilot QA, then store release. Repo migrations through **014**. Master plan: **`brain/go_live_checklist.md`**.
 
 ## Resume Here (next session)
-1. Read **`brain/project_handoff.md`** for full context from all chat sessions.
-2. **Apply migrations `012`–`014`** on Supabase SQL editor (MCP timed out May 27 — apply manually).
+1. **Apply migrations `012`–`014`** on Supabase SQL editor (MCP timed out May 27 — apply manually).
 2. Run **`supabase/tests/rls_role_smoke.sql`** — confirm zero tables without RLS.
 3. **Full role QA** per Phase 0 in `brain/go_live_checklist.md`.
 4. **Stripe Connect** webhooks + production auth URLs when pilot property is chosen.
@@ -110,6 +109,7 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 - **Helper** — `mobile/lib/core/workforce/clock_hours.dart`.
 
 ### Go-live artifacts
+- **`brain/handoff_for_claude.md`** — copy-paste handoff for Claude / other AI
 - **`brain/go_live_checklist.md`** — phased launch plan (demo → pilot → stores)
 - **`supabase/migrations/014_launch_rls_hardening.sql`** — RLS hardening
 - **`supabase/tests/rls_role_smoke.sql`** — post-migration verification
@@ -125,8 +125,8 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 ### Recent GitHub (`main`)
 | Commit | Summary |
 |---|---|
-| `8b5b8aa` | Owner/Admin two-way quick switch |
-| `2f0c9b8` | Go-live checklist + RLS migration 014 |
+| `TBD` | Owner/Admin two-way quick switch (top bars + admin tools link) |
+| `eb29777` | Unify owner + super_admin → Owner dashboard |
 | `401b13e` | OM workforce timecards + owner labor estimates |
 | `48ec1cf` | Billing door counts UI |
 

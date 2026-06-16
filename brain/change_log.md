@@ -5,9 +5,9 @@ Date | Change | Files Modified | Reason
 
 ---
 
-### 2026-05-27 — Project handoff document (`1955595`)
+### 2026-05-19 — Consolidated handoff doc for external AI
 
-- **`brain/project_handoff.md`** — consolidated chat history, infra, roles, features, migrations, go-live order
+- **`brain/handoff_for_claude.md`** — single copy-paste summary of project, chat decisions, credentials, migrations, go-live steps
 
 ### 2026-05-19 — Go-live process started (`2f0c9b8`)
 
