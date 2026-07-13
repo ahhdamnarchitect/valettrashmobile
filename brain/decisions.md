@@ -64,6 +64,11 @@
 - **Reason**: Clear separation of staff vs resident onboarding; no push/email pipeline yet.
 - **Impact**: `brain/resident_invite_workflow.md`; PM export; admin `use_count` column fix.
 
+### 2026-07-12
+- **Decision**: Go-live **Step 1 = legal/business foundation** (entity, insurance, Privacy Policy, Terms, property/worker agreements) before or parallel to technical hardening; first technical action remains migrations `012`→`014`.
+- **Reason**: Protect owner liability and store-compliance before real resident data or payments.
+- **Impact**: `brain/go_live_checklist.md`, `brain/next_steps.md` ordered Steps 1–6.
+
 ### 2026-05-19
 - **Decision**: **Go-live phased** — demo now → security sprint (RLS 014) → pilot → stores; tracked in `brain/go_live_checklist.md`.
 - **Reason**: Client wants operational launch with security, not just feature-complete UI.

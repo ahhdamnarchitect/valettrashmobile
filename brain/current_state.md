@@ -1,14 +1,19 @@
 # Current State
 
 ## Current Objective
-**Go-live readiness** — security sprint (RLS), pilot QA, then store release. Repo migrations through **014**. Master plan: **`brain/go_live_checklist.md`**.
+**Go-live readiness** — legal foundation + security sprint (RLS) → pilot → store release. Repo migrations through **014**. Master plan: **`brain/go_live_checklist.md`**.
 
 ## Resume Here (next session)
-1. **Apply migrations `012`–`014`** on Supabase SQL editor (MCP timed out May 27 — apply manually).
-2. Run **`supabase/tests/rls_role_smoke.sql`** — confirm zero tables without RLS.
-3. **Full role QA** per Phase 0 in `brain/go_live_checklist.md`.
-4. **Stripe Connect** webhooks + production auth URLs when pilot property is chosen.
-5. Blockers: hosted migrations 012–014 pending apply; Stripe checkout; iOS signing.
+**Ordered playbook (do in sequence):**
+
+1. **Legal / business (Step 1 — protects the owner)** — LLC/corp confirmed; insurance; Privacy Policy + Terms URLs; property + worker agreements (lawyer review).
+2. **Apply migrations `012` → `013` → `014`** on Supabase SQL editor (hosted apply still pending; MCP timed out previously).
+3. Run **`supabase/tests/rls_role_smoke.sql`** — confirm zero tables without RLS; check Database Linter.
+4. **Full role QA** after RLS (Owner switch, resident signup, worker clock, PM scope, OM map).
+5. **Staging + prod** Supabase projects; production Site URL / Redirect URLs; email provider.
+6. **Pilot** one property via `brain/resident_invite_workflow.md`; then Stripe + store builds.
+
+Blockers: hosted migrations 012–014 pending; Stripe checkout; iOS signing; policies not yet published.
 
 ## Run the App
 ```powershell
@@ -109,7 +114,6 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 - **Helper** — `mobile/lib/core/workforce/clock_hours.dart`.
 
 ### Go-live artifacts
-- **`brain/handoff_for_claude.md`** — copy-paste handoff for Claude / other AI
 - **`brain/go_live_checklist.md`** — phased launch plan (demo → pilot → stores)
 - **`supabase/migrations/014_launch_rls_hardening.sql`** — RLS hardening
 - **`supabase/tests/rls_role_smoke.sql`** — post-migration verification

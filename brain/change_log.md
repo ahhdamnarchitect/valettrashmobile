@@ -5,9 +5,13 @@ Date | Change | Files Modified | Reason
 
 ---
 
-### 2026-05-19 — Consolidated handoff doc for external AI
+### 2026-07-12 — Brain refresh: ordered go-live playbook
 
-- **`brain/handoff_for_claude.md`** — single copy-paste summary of project, chat decisions, credentials, migrations, go-live steps
+- **Step 1** clarified as legal/business foundation (LLC, insurance, Privacy/Terms, contracts)
+- **`go_live_checklist.md`** — Step 1 legal section before Phase 0 security
+- **`next_steps.md`** — ordered Steps 1–6 (legal → RLS → QA → env → pilot → stores)
+- **`current_state.md`** — resume sequence updated
+- Removed obsolete `handoff_for_claude.md` / `project_handoff.md` from working tree
 
 ### 2026-05-19 — Go-live process started (`2f0c9b8`)
 

@@ -13,7 +13,25 @@ No app is “unhackable.” Target: **RLS everywhere**, least privilege, monitor
 
 ---
 
-## Phase 0 — Start now (this week)
+## Step 1 — Legal & business foundation (do before real residents)
+
+Protects *you* as the company. Prefer lawyer-reviewed templates.
+
+| # | Action | Status |
+|---|---|---|
+| 1 | LLC / corporation confirmed | [ ] |
+| 2 | General liability + E&O insurance | [ ] |
+| 3 | Property management agreements (per complex) | [ ] |
+| 4 | Worker / contractor agreements | [ ] |
+| 5 | **Privacy Policy** published at public URL | [ ] |
+| 6 | **Terms of Service** published at public URL | [ ] |
+| 7 | Support / contact page; cookie notice if marketing site | [ ] |
+
+**First technical step after (or parallel):** apply migrations `012` → `013` → `014` on hosted Supabase.
+
+---
+
+## Phase 0 — Security + QA (this week)
 
 ### Database
 - [ ] Apply pending migrations on hosted Supabase **in order**:
