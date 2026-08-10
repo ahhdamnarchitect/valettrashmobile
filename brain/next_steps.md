@@ -5,7 +5,8 @@
 See **`brain/go_live_checklist.md`** for full detail.
 
 ### Step 1 — Legal & business (protect the owner)
-- [ ] LLC / corporation confirmed
+- [x] LLC / corporation confirmed
+- [ ] Business bank account (needed for Stripe)
 - [ ] Liability + E&O insurance
 - [ ] Property management agreements (lawyer review)
 - [ ] Worker / contractor agreements

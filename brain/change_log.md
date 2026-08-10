@@ -5,6 +5,12 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-08-10 — External AI handoff doc
+
+- **`brain/handoff_for_external_ai.md`** — single paste for Claude / ChatGPT (product, creds, migrations, decisions, next steps)
+- Marked LLC done; bank account still needed for Stripe
+- Updated resume notes in `current_state.md` / `next_steps.md`
+
 ### 2026-07-12 — Brain refresh: ordered go-live playbook
 
 - **Step 1** clarified as legal/business foundation (LLC, insurance, Privacy/Terms, contracts)

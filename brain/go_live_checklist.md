@@ -19,13 +19,14 @@ Protects *you* as the company. Prefer lawyer-reviewed templates.
 
 | # | Action | Status |
 |---|---|---|
-| 1 | LLC / corporation confirmed | [ ] |
-| 2 | General liability + E&O insurance | [ ] |
-| 3 | Property management agreements (per complex) | [ ] |
-| 4 | Worker / contractor agreements | [ ] |
-| 5 | **Privacy Policy** published at public URL | [ ] |
-| 6 | **Terms of Service** published at public URL | [ ] |
-| 7 | Support / contact page; cookie notice if marketing site | [ ] |
+| 1 | LLC / corporation confirmed | [x] |
+| 2 | Business bank account (for Stripe) | [ ] |
+| 3 | General liability + E&O insurance | [ ] |
+| 4 | Property management agreements (per complex) | [ ] |
+| 5 | Worker / contractor agreements | [ ] |
+| 6 | **Privacy Policy** published at public URL | [ ] |
+| 7 | **Terms of Service** published at public URL | [ ] |
+| 8 | Support / contact page; cookie notice if marketing site | [ ] |
 
 **First technical step after (or parallel):** apply migrations `012` → `013` → `014` on hosted Supabase.
 
