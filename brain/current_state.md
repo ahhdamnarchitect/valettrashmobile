@@ -15,7 +15,7 @@
 
 **External AI handoff:** `brain/handoff_for_external_ai.md` (paste into Claude / ChatGPT).
 
-Blockers: hosted migrations 012–014 pending; Stripe checkout; iOS signing; policies not yet published; business bank for Stripe.
+Blockers: hosted migrations 012–014 pending apply; Stripe **secrets + webhook** still needed from owner (code is wired); iOS signing; policies not yet published; business bank for Stripe live mode.
 
 ## Run the App
 ```powershell
@@ -48,6 +48,7 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 | `workforce_labor` | `012_workforce_labor.sql` | `users.hourly_rate`, clock_events/worker_locations RLS, `set_worker_hourly_rate` RPC |
 | `unify_owner_role` | `013_unify_owner_role.sql` | `relaxedlivingtx@gmail.com` → `owner`; optional `+owner` alias |
 | `launch_rls_hardening` | `014_launch_rls_hardening.sql` | Re-enable RLS, `is_owner_admin()`, satellite table policies |
+| `stripe_payments` | `015_stripe_payments.sql` | `payment_orders` + Stripe columns on comebacks (**applied hosted Aug 13**) |
 
 ### Billing rules (app + DB)
 - **Inputs (owner via Admin Portal):** total doors, occupied doors, $/billable door/month on **Property Billing Rates**.
@@ -55,7 +56,8 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 - Falls back to counted units + `resident_units` when door counts not saved yet.
 - **PM contract estimate** = billable doors × `monthly_fee_per_door`.
 - **Owner revenue/door** = (contract + resident MRR + paid invoices + paid comebacks) ÷ billable doors per property.
-- **Stripe Connect** — `contractor_payouts` listed on owner Financials; live sync pending webhook.
+- **Stripe Checkout** — packs 1/$5, 3/$14, 5/$20 and paid single comeback; webhook credits after `checkout.session.completed`.
+- **Stripe Connect** — contractor payouts UI ready; live Connect onboarding still pending.
 
 ---
 

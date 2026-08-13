@@ -96,7 +96,8 @@ Protects *you* as the company. Prefer lawyer-reviewed templates.
 ### Payments (if charging during pilot)
 - [ ] Stripe Connect account + webhook endpoint live
 - [ ] `contractor_payouts` / subscriptions sync from webhooks
-- [ ] Paid comebacks + pickup packs checkout (currently placeholder)
+- [x] Paid comebacks + pickup packs checkout (code live; set Stripe secrets + webhook)
+- [ ] Deploy Edge Functions + `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` (`brain/stripe_setup.md`)
 
 ### Monitoring
 - [ ] Error tracking (Sentry or Crashlytics) in release builds

@@ -39,7 +39,7 @@ Admin Portal (`AdminDashboardScreen`) is **not** a separate login — open from 
 
 - **Flutter** (mobile + web), Material 3, `supabase_flutter` v1.x
 - **Supabase** Auth + Postgres + Storage + (planned) Edge Functions
-- **Stripe** — scaffold only; live checkout/webhooks not done
+- **Stripe Checkout** — packs + paid comeback; webhook fulfillment in repo; **secrets not set until owner adds keys** (`brain/stripe_setup.md`)
 - Brain / Repo OS: `brain/` + `.cursor/rules/`
 
 ---
@@ -63,6 +63,7 @@ Env (local): `mobile/.env` with `SUPABASE_URL` + `SUPABASE_ANON_KEY` (see `mobil
 | `012_workforce_labor.sql` | **Pending apply** (in repo) |
 | `013_unify_owner_role.sql` | **Pending apply** (in repo) |
 | `014_launch_rls_hardening.sql` | **Pending apply** (in repo) |
+| `015_stripe_payments.sql` | **Applied hosted** Aug 13 |
 
 Apply **012 → 013 → 014** in SQL editor, then run `supabase/tests/rls_role_smoke.sql`.
 
@@ -162,7 +163,7 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 
 ### For real pilot / charging
 6. Staging + prod Supabase projects; production auth URLs + email provider
-7. Wire Stripe Checkout + webhooks (comebacks, packs, Connect payouts)
+7. Set Stripe secrets + deploy functions (`brain/stripe_setup.md`); Connect payouts later
 8. Pilot 1 property via `brain/resident_invite_workflow.md`
 9. Liability insurance + signed property/worker agreements
 

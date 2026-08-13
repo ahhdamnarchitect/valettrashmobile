@@ -39,7 +39,9 @@ See **`brain/go_live_checklist.md`** for full detail.
 - [ ] Onboard per `brain/resident_invite_workflow.md`
 - [ ] Support runbook (reset password, re-issue invite, wrong role)
 - [ ] Error monitoring (Sentry/Crashlytics) in release builds
-- [ ] Stripe Connect webhooks if charging during pilot
+- [ ] **Stripe secrets** — set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_ORIGIN` and deploy functions (`brain/stripe_setup.md`)
+- [ ] Test checkout with `4242…` card as resident
+- [ ] Stripe Connect (driver payouts) after bank + live Stripe account
 
 ### Step 6 — App stores
 - [ ] Link Privacy + Terms in app + store listings
@@ -73,7 +75,7 @@ See **`brain/go_live_checklist.md`** for full detail.
 ## Next Features (after pilot)
 
 - [ ] Bulk unit import + bulk invite code generate
-- [ ] Stripe paid comebacks + pickup packs checkout
+- [x] Stripe paid comebacks + pickup packs checkout (code + migration 015; secrets/deploy still owner action)
 - [ ] Push notifications (FCM/APNs)
 - [ ] Steps / activity tracking (deferred)
 

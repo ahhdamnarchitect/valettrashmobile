@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/payments/stripe_checkout.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/comeback_pricing.dart';
 
@@ -24,32 +23,12 @@ class _BuyExtraPickupsSectionState extends State<BuyExtraPickupsSection> {
   Future<void> _purchase(ComebackPack pack) async {
     setState(() => _busy = true);
     try {
-      final client = Supabase.instance.client;
-      final uid = client.auth.currentUser?.id;
-      if (uid == null) return;
-
-      final unit = await client
-          .from('resident_units')
-          .select('id, purchased_comeback_balance')
-          .eq('user_id', uid)
-          .eq('is_active', true)
-          .maybeSingle();
-
-      if (unit == null) {
-        throw Exception('No active unit assignment found');
-      }
-
-      final current =
-          unit['purchased_comeback_balance'] as int? ?? 0;
-      await client.from('resident_units').update({
-        'purchased_comeback_balance': current + pack.quantity,
-      }).eq('id', unit['id']);
-
+      await StripeCheckout.start(kind: 'pack', quantity: pack.quantity);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
-            'Added ${pack.quantity} comeback${pack.quantity == 1 ? '' : 's'} — \$${pack.priceDollars} (payment integration coming soon)',
+            'Complete payment in Stripe. Credits are added after checkout succeeds.',
           ),
           behavior: SnackBarBehavior.floating,
         ),

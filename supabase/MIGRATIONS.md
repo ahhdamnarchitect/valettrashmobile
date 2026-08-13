@@ -30,5 +30,14 @@ Run seeds in numeric order under `seed_data/`. After invites migration, run `010
 
 ## Edge Functions
 
-- `supabase functions deploy stripe-webhook`  
-- Set secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+See **`brain/stripe_setup.md`**.
+
+```
+supabase functions deploy create-checkout-session
+supabase functions deploy stripe-webhook --no-verify-jwt
+supabase secrets set STRIPE_SECRET_KEY=sk_test_...
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+supabase secrets set APP_ORIGIN=http://localhost:8091
+```
+
+Also apply `015_stripe_payments.sql` before first checkout.

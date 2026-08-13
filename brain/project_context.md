@@ -8,7 +8,7 @@ Relaxed Living Valet is a production mobile app for valet trash service at apart
 - Framework: Flutter (cross-platform iOS/Android), Material 3
 - Runtime: Flutter SDK ^3.10.9
 - Backend: Supabase (PostgreSQL + RLS, Auth, Realtime, Storage)
-- Payments: Stripe (planned — edge function scaffold exists)
+- Payments: Stripe Checkout (packs + paid comebacks; webhook fulfillment)
 - Push Notifications: OneSignal (Phase 2, not yet wired)
 - Phase 2 additions: Twilio SMS, Mapbox, Stripe Connect
 
@@ -44,7 +44,7 @@ Test logins: `brain/test_credentials.md`
 - All data access gated by RLS policies; no data leaks across roles
 
 ## Assumptions / Unknowns
-- Stripe Connect contractor payouts not implemented yet (webhook edge function scaffold only)
+- Stripe Connect contractor payouts not implemented yet; resident Checkout is wired pending secrets
 - OneSignal push tokens not collected or stored yet
 - Admin dashboard (`admin_dashboard/`) is scaffolded but not validated against current DB schema
 - `main_simple.dart` exists as a simpler alternate entry point — purpose unclear

@@ -64,6 +64,11 @@
 - **Reason**: Clear separation of staff vs resident onboarding; no push/email pipeline yet.
 - **Impact**: `brain/resident_invite_workflow.md`; PM export; admin `use_count` column fix.
 
+### 2026-08-13
+- **Decision**: Resident payments use **Stripe Checkout** via Edge Functions; secret key never in the Flutter app; credits applied only on webhook `checkout.session.completed`.
+- **Reason**: PCI-safe, matches existing pack prices, works on web demo (`localhost:8091`).
+- **Impact**: `015_stripe_payments.sql`, `create-checkout-session`, updated `stripe-webhook`; owner must set Stripe secrets.
+
 ### 2026-07-12
 - **Decision**: Go-live **Step 1 = legal/business foundation** (entity, insurance, Privacy Policy, Terms, property/worker agreements) before or parallel to technical hardening; first technical action remains migrations `012`→`014`.
 - **Reason**: Protect owner liability and store-compliance before real resident data or payments.

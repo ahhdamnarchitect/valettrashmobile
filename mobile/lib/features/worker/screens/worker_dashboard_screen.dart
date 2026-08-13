@@ -164,11 +164,13 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
       final rawComebacks = await client
           .from('missed_pickup_requests')
           .select(
-              'id, status, requested_at, pickups(units(unit_number), nightly_runs(property_id))')
+              'id, status, requested_at, payment_status, pickups(units(unit_number), nightly_runs(property_id))')
           .limit(80);
       final cbList = List<Map<String, dynamic>>.from(rawComebacks as List);
       _comebackRequests = [];
       for (final row in cbList) {
+        final pay = row['payment_status']?.toString();
+        if (pay == 'pending_payment') continue;
         final p = row['pickups'];
         if (p is! Map) continue;
         final nr = p['nightly_runs'];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/payments/stripe_checkout.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/lottie_feedback.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -106,18 +107,14 @@ class _ResidentComebackRequestScreenState
       final insertData = <String, dynamic>{
         'resident_user_id': uid,
         'status': 'pending',
-        'is_free': !_isPaid,
-        'payment_status': _isPaid ? 'pending_payment' : 'free',
+        'is_free': true,
+        'payment_status': 'free',
         'requested_at': now.toUtc().toIso8601String(),
       };
       if (pickupId != null) insertData['pickup_id'] = pickupId;
       if (_notesController.text.trim().isNotEmpty) {
         insertData['notes'] = _notesController.text.trim();
       }
-      if (_isPaid) {
-        insertData['payment_amount_cents'] = _singlePrice * 100;
-      }
-
       await client.from('missed_pickup_requests').insert(insertData);
 
       if (propertyId != null) {
@@ -165,38 +162,28 @@ class _ResidentComebackRequestScreenState
     }
   }
 
-  void _showPaymentPlaceholder() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Payment Coming Soon',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 17),
+  Future<void> _payAndRequest() async {
+    setState(() => _submitting = true);
+    try {
+      await StripeCheckout.start(
+        kind: 'comeback',
+        notes: _notesController.text,
+      );
+      if (mounted) setState(() => _submitted = true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment failed: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        content: Text(
-          'Online payment is being set up. Your request will be recorded and a team member will follow up to process the \$$_singlePrice fee.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textMuted)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _submit();
-            },
-            child: const Text('Submit Anyway',
-                style: TextStyle(
-                    color: AppColors.resident, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   String get _quotaMessage {
@@ -242,7 +229,7 @@ class _ResidentComebackRequestScreenState
                     LottieSuccessView(
                       message: 'Comeback Requested',
                       subtitle: _isPaid
-                          ? 'Your request is recorded. A team member will contact you about payment.'
+                          ? 'Finish checkout in Stripe if it is still open. The request is queued once payment succeeds.'
                           : 'A driver will be sent to collect your bags.',
                     ),
                     const SizedBox(height: 24),
@@ -343,8 +330,7 @@ class _ResidentComebackRequestScreenState
                           ? 'Submitting…'
                           : 'Pay \$$_singlePrice & Request',
                       accent: AppColors.warning,
-                      onPressed:
-                          _submitting ? null : _showPaymentPlaceholder,
+                      onPressed: _submitting ? null : _payAndRequest,
                       icon: Icons.credit_card_outlined,
                     ),
                     const SizedBox(height: 12),

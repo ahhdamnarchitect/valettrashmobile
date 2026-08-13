@@ -39,6 +39,29 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowCheckoutToast());
+  }
+
+  void _maybeShowCheckoutToast() {
+    final checkout = Uri.base.queryParameters['checkout'];
+    if (checkout == null || !mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          checkout == 'success'
+              ? 'Payment received. Credits appear after Stripe confirms (usually a few seconds).'
+              : 'Checkout canceled. No charge was made.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,

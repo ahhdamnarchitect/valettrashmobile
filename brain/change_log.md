@@ -5,6 +5,14 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-08-13 — Stripe Checkout for packs and paid comebacks
+
+- Migration `015_stripe_payments.sql` — `payment_orders`; nullable `pickup_id`; Stripe session columns
+- Edge functions: `create-checkout-session`, `stripe-webhook` fulfillment (credits + invoice row)
+- Flutter: `StripeCheckout` helper; Extra Services packs + paid comeback open hosted Checkout
+- Setup: `brain/stripe_setup.md` (keys, webhook URL, test card)
+- Hosted migration applied via MCP (`stripe_payments`)
+
 ### 2026-08-10 — External AI handoff doc
 
 - **`brain/handoff_for_external_ai.md`** — single paste for Claude / ChatGPT (product, creds, migrations, decisions, next steps)
