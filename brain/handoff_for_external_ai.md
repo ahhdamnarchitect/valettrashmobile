@@ -1,9 +1,10 @@
 # Handoff — Relaxed Living Valet (for Claude / ChatGPT / other AI)
 
-**Updated:** 2026-08-10  
+**Updated:** 2026-08-18  
 **Repo:** https://github.com/relaxedlivingvalet/valettrashmobile (`main`)  
 **Local path:** `C:\Users\WeLovePQ\Desktop\CascadeProjects\windsurf-project`  
-**App (dev):** http://localhost:8091  
+**App (dev):** http://localhost:8091 (PC only; iPad same Wi-Fi → `http://<PC-IPv4>:8091`)  
+**Marketing site:** https://relaxlivingvalet.com (not the Flutter app)  
 
 Copy this whole file into a new Claude or ChatGPT chat to resume work. Prefer also reading live brain files in the repo when coding in Cursor.
 
@@ -28,8 +29,8 @@ Copy this whole file into a new Claude or ChatGPT chat to resume work. Prefer al
 | `resident` | ResidentDashboardScreen | Dark |
 | `driver` | WorkerDashboardScreen | Dark |
 | `operations_manager` | ManagerDashboardScreen (workforce, map) | Dark |
-| `property_manager` | PropertyManagerDashboardNewScreen | Light |
-| `owner` / `super_admin` | OwnerDashboardScreen (same login tier) | Light |
+| `property_manager` | PropertyManagerDashboardNewScreen (apartment office, not RLV owner) | Light |
+| `owner` / `super_admin` | OwnerDashboardScreen (Relaxed Living / you) | Light |
 
 Admin Portal (`AdminDashboardScreen`) is **not** a separate login — open from Owner via top switch bar or More → Admin Portal. Switch back with Admin top bar → Owner Dashboard.
 
@@ -78,7 +79,7 @@ Apply **012 → 013 → 014** in SQL editor, then run `supabase/tests/rls_role_s
 
 - 1 free comeback / calendar month (no rollover)
 - Purchased credits roll over on `resident_units.purchased_comeback_balance`
-- Packs: 1/$5, 3/$14, 5/$20 — checkout still placeholder
+- Packs: 1/$5, 3/$14, 5/$20 — Checkout + webhook **deployed**; Stripe secrets still owner action (`brain/stripe_setup.md`)
 
 ---
 
@@ -145,42 +146,43 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 
 - **LLC:** done
 - **Bank account:** needed (for Stripe)
-- **Privacy Policy / Terms public URLs:** still needed
+- **Privacy Policy / Terms public URLs:** still needed on https://relaxlivingvalet.com
 - **Insurance / property contracts:** recommended before real signed complexes
-- **Demo readiness:** app feature-complete enough for apartment **web demos** now
-- **Production/store:** blocked on RLS apply, policies, Stripe, release builds
+- **Demo readiness:** web demos now; iPad Safari via LAN IP; TestFlight needs Mac
+- **Production/store:** blocked on RLS apply, Privacy/Terms, Stripe secrets, Mac IPA
 
 ---
 
 ## Ordered next work (priority)
 
 ### For apartment demos (this month)
-1. Rehearse all roles on localhost:8091
+1. Rehearse all roles on localhost:8091; iPad = same Wi-Fi + PC LAN IP (not localhost, not the marketing site)
 2. Polish one demo property (doors, rates, invite codes)
-3. Publish Privacy + Terms URLs (even simple)
-4. Open business bank → Stripe account (test mode OK for demos of UI)
-5. Apply migrations 012→014 + RLS smoke test
+3. Publish Privacy + Terms on https://relaxlivingvalet.com
+4. Paste Stripe test secrets + webhook (`brain/stripe_setup.md`); existing Stripe account is not auto-linked
+5. Apply migrations 012→014 + RLS smoke test (Advisor currently flags RLS off)
+6. For a downloadable iPad app: Apple Developer + Mac + Xcode → TestFlight (Windows cannot build IPA)
 
 ### For real pilot / charging
-6. Staging + prod Supabase projects; production auth URLs + email provider
-7. Set Stripe secrets + deploy functions (`brain/stripe_setup.md`); Connect payouts later
-8. Pilot 1 property via `brain/resident_invite_workflow.md`
-9. Liability insurance + signed property/worker agreements
+7. Staging + prod Supabase projects; production auth URLs + email provider
+8. Stripe live keys after bank; Connect payouts later
+9. Pilot 1 property via `brain/resident_invite_workflow.md`
+10. Liability insurance + signed property/worker agreements
 
 ### For App Store / Play
-10. `flutter build appbundle --release` / `ipa` (iOS needs Mac + Apple Dev)
-11. Store listings, Data safety / App Privacy labels
-12. Native GPS (`geolocator`), CSV `share_plus`, push later
+11. `flutter build appbundle --release` / `ipa` (iOS needs Mac + Apple Dev); TestFlight before public App Store
+12. Store listings, Data safety / App Privacy labels
+13. Native GPS (`geolocator`), CSV `share_plus`, push later
 
 ---
 
 ## Known gaps / risks
 
-- Hosted DB may still have **RLS off** on many tables until 014 applied
-- Stripe paid flows = placeholders; Financials read DB rows only
+- Hosted DB still has **RLS off** on core tables until 014 applied (Supabase Advisor ~24 critical)
+- Stripe Checkout/webhook deployed; **secrets not set**; Financials read DB rows; Connect not live
 - Worker location / CSV export use **web** (`dart:html`) paths
 - `supabase_flutter` still on v1
-- Site URL still localhost-oriented for auth emails
+- Auth Site URL still localhost-oriented; marketing site is relaxlivingvalet.com
 - Never commit secrets; rotate if exposed
 
 ---

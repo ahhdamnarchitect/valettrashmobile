@@ -2,7 +2,7 @@
 
 All accounts are in the Supabase project `airpwzzkyjqzeeqizvft` (relaxed-living, AWS us-east-2).
 
-App runs at: `http://localhost:8091`
+App runs at: `http://localhost:8091` (this PC). iPad on same Wi-Fi: `http://<PC-IPv4>:8091`. Marketing site is **https://relaxlivingvalet.com** (not the app).
 
 ---
 
@@ -62,4 +62,5 @@ Admin Portal (`AdminDashboardScreen`) is reached from **Owner → More → Admin
 
 - Supabase email confirmation is **disabled** — accounts work immediately after creation.
 - Password reset: "Forgot password?" on login or "Change Password" in profile tabs.
-- Site URL: `http://localhost:8091` (update for production).
+- Site URL: `http://localhost:8091` (keep for local; later add `https://relaxlivingvalet.com` as Redirect URL, do not drop localhost until the app is hosted).
+- Property Manager = apartment office; Owner = Relaxed Living.

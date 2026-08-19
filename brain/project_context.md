@@ -17,7 +17,7 @@ Relaxed Living Valet is a production mobile app for valet trash service at apart
 |---|---|---|
 | Resident | `resident` | ResidentDashboardScreen |
 | Driver/Porter | `driver` | WorkerDashboardScreen |
-| Property Manager | `property_manager` | PropertyManagerDashboardNewScreen |
+| Property Manager (apartment office) | `property_manager` | PropertyManagerDashboardNewScreen |
 | Operations Manager | `operations_manager` | ManagerDashboardScreen |
 | Business owner | `owner` or `super_admin` | OwnerDashboardScreen (same); Admin Portal from More |
 
@@ -26,7 +26,7 @@ Test logins: `brain/test_credentials.md`
 ## Primary Goals
 - Residents sign up via invite code + unit number, then track their service
 - Drivers see and execute nightly pickup routes; clock in/out; report violations with photos
-- Property managers view occupancy, billing, and compliance per property
+- Property managers (apartment office) view occupancy, billing, and compliance per property
 - Operations managers run nightly ops (routes, workforce timecards, live map)
 - Owner views portfolio financials, labor cost, and opens Admin Portal for platform setup
 
@@ -45,6 +45,8 @@ Test logins: `brain/test_credentials.md`
 
 ## Assumptions / Unknowns
 - Stripe Connect contractor payouts not implemented yet; resident Checkout is wired pending secrets
+- Marketing site: **https://relaxlivingvalet.com** (not the Flutter app)
+- iOS builds require a Mac; in-person install = TestFlight; Windows demo = Flutter web localhost or LAN IP
 - OneSignal push tokens not collected or stored yet
 - Admin dashboard (`admin_dashboard/`) is scaffolded but not validated against current DB schema
 - `main_simple.dart` exists as a simpler alternate entry point — purpose unclear

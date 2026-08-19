@@ -6,16 +6,16 @@
 ## Resume Here (next session)
 **Ordered playbook (do in sequence):**
 
-1. **Legal / business** — LLC done; still need bank (Stripe), Privacy/Terms URLs, insurance, property/worker agreements.
-2. **Apply migrations `012` → `013` → `014`** on Supabase SQL editor (hosted apply still pending).
-3. Run **`supabase/tests/rls_role_smoke.sql`** — confirm zero tables without RLS; check Database Linter.
-4. **Full role QA** after RLS (Owner switch, resident signup, worker clock, PM scope, OM map).
-5. **Staging + prod** Supabase projects; production Site URL / Redirect URLs; email provider.
-6. **Pilot** one property via `brain/resident_invite_workflow.md`; then Stripe + store builds.
+1. **Legal / business** — LLC done; marketing site **https://relaxlivingvalet.com** live; still need Privacy/Terms pages on that site, bank (Stripe live), insurance, property/worker agreements.
+2. **Apply migrations `012` → `013` → `014`** on hosted Supabase (Advisor shows RLS off on core tables until 014). Then run `supabase/tests/rls_role_smoke.sql`.
+3. **Stripe secrets** — owner must paste `STRIPE_SECRET_KEY` + webhook `whsec_` into Edge Function secrets (`brain/stripe_setup.md`). Existing Stripe account is **not** auto-linked.
+4. **In-person iPad demo (no Mac yet):** same Wi-Fi as PC → Safari `http://<PC-LAN-IP>:8091`. `localhost:8091` only works on the PC. Marketing site is **not** the Flutter app.
+5. **Installable iPad app:** Apple Developer ($99) + **Mac + Xcode** → TestFlight (do this before public App Store). Windows cannot build iOS.
+6. Role QA after RLS; then staging/prod + store listings.
 
-**External AI handoff:** `brain/handoff_for_external_ai.md` (paste into Claude / ChatGPT).
+**External AI handoff:** `brain/handoff_for_external_ai.md`.
 
-Blockers: hosted migrations 012–014 pending apply; Stripe **secrets + webhook** still needed from owner (code is wired); iOS signing; policies not yet published; business bank for Stripe live mode.
+Blockers: hosted 012–014 not applied (Advisor: ~24 RLS-off issues); Stripe secrets/webhook still owner action; no Mac for TestFlight; Privacy/Terms not published yet; business bank for Stripe live.
 
 ## Run the App
 ```powershell
@@ -24,7 +24,7 @@ flutter pub get
 flutter run -d web-server --web-port 8091 --no-pub
 ```
 
-App: **http://localhost:8091** — hard refresh or `R` after pull.
+App: **http://localhost:8091** (this PC only). iPad on same Wi-Fi: `http://<this-PC-IPv4>:8091`. Marketing: **https://relaxlivingvalet.com**.
 
 ---
 
@@ -45,9 +45,9 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 | `staff_invites` | `009_staff_invites.sql` | Staff self-signup RPCs |
 | `property_billing_metrics` | `010_property_billing_metrics.sql` | `monthly_fee_per_door` (default $25), `minimum_billable_occupancy_percent` (default 0.85) |
 | `property_door_counts` | `011_property_door_counts.sql` | `billing_total_doors`, `billing_occupied_doors` (manual entry per complex) |
-| `workforce_labor` | `012_workforce_labor.sql` | `users.hourly_rate`, clock_events/worker_locations RLS, `set_worker_hourly_rate` RPC |
-| `unify_owner_role` | `013_unify_owner_role.sql` | `relaxedlivingtx@gmail.com` → `owner`; optional `+owner` alias |
-| `launch_rls_hardening` | `014_launch_rls_hardening.sql` | Re-enable RLS, `is_owner_admin()`, satellite table policies |
+| `workforce_labor` | `012_workforce_labor.sql` | `users.hourly_rate`, clock_events/worker_locations RLS, `set_worker_hourly_rate` RPC — **not applied hosted** |
+| `unify_owner_role` | `013_unify_owner_role.sql` | `relaxedlivingtx@gmail.com` → `owner`; optional `+owner` alias — **not applied hosted** |
+| `launch_rls_hardening` | `014_launch_rls_hardening.sql` | Re-enable RLS, `is_owner_admin()`, satellite table policies — **not applied hosted** |
 | `stripe_payments` | `015_stripe_payments.sql` | `payment_orders` + Stripe columns on comebacks (**applied hosted Aug 13**) |
 
 ### Billing rules (app + DB)
@@ -78,6 +78,11 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 - **Owner test login:** `relaxedlivingtx@gmail.com` / `RelaxedLiving2026!` (Staff).
 - `RoleHome` polls `fetchUserRole()` after signup (fixes PM landing as resident race).
 - Staff: `staff_invites` + `register_staff_with_invite`.
+
+### Who uses which dashboard
+- **`property_manager`** = apartment office / complex manager (pickup %, occupancy, announcements) — **not** Relaxed Living’s owner.
+- **`owner`** = Relaxed Living (you) — Financials, all properties, Admin Portal.
+- Apartment-building landlords who want that overview use a PM login (no separate “complex owner” role).
 
 ### Property manager dashboard
 | Tab | Content |
@@ -134,10 +139,9 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 ### Recent GitHub (`main`)
 | Commit | Summary |
 |---|---|
-| `TBD` | Owner/Admin two-way quick switch (top bars + admin tools link) |
-| `eb29777` | Unify owner + super_admin → Owner dashboard |
-| `401b13e` | OM workforce timecards + owner labor estimates |
-| `48ec1cf` | Billing door counts UI |
+| `7c5d417` | Stripe Checkout for packs + paid comebacks |
+| `834a7b3` | External AI handoff doc |
+| `c5af2db` | Owner/Admin two-way quick switch |
 
 ---
 
@@ -163,7 +167,8 @@ App: **http://localhost:8091** — hard refresh or `R` after pull.
 ---
 
 ## Known Issues / Constraints
-- **Stripe** — owner Financials reads DB; Connect webhooks not live; paid comebacks still placeholder checkout
-- **RLS** — many tables RLS off on hosted DB
-- **Web-only CSV** — `dart:html` download; native needs `share_plus` later
+- **Stripe** — Checkout + webhook **code deployed**; secrets not in Supabase yet (existing Stripe login is not auto-connected). Connect payouts still pending.
+- **RLS** — hosted Advisor: policies exist but RLS **disabled** on core tables (`users`, `properties`, `resident_units`, pickups, invoices, …) until 014 applied. Newer tables (`payment_orders`, `staff_invites`, `clock_events`) already have RLS on.
+- **iPad / App Store** — Flutter web on this Windows PC only; iOS IPA needs Mac + Apple Developer; TestFlight is the in-person install path (not public App Store first).
+- **Web-only CSV / worker GPS** — `dart:html`; native needs `share_plus` / `geolocator` before store.
 - Live DB may have **0** subscriptions/invoices until seed or Stripe — contract math still works from units + fee

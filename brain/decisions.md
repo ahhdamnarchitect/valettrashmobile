@@ -64,8 +64,13 @@
 - **Reason**: Clear separation of staff vs resident onboarding; no push/email pipeline yet.
 - **Impact**: `brain/resident_invite_workflow.md`; PM export; admin `use_count` column fix.
 
+### 2026-08-18
+- **Decision**: In-person apartment demos use **TestFlight** after a Mac IPA build; until then, iPad Safari on the PC’s LAN IP. Do not treat the marketing site as the app.
+- **Reason**: Apple requires macOS/Xcode; `localhost` only works on the machine running Flutter; relaxlivingvalet.com is marketing.
+- **Impact**: Owner needs Apple Developer + Mac; Privacy/Terms on the site before store review.
+
 ### 2026-08-13
-- **Decision**: Resident payments use **Stripe Checkout** via Edge Functions; secret key never in the Flutter app; credits applied only on webhook `checkout.session.completed`.
+- **Decision**: Resident payments use **Stripe Checkout** via Edge Functions; secret key never in the Flutter app; credits applied only on webhook `checkout.session.completed`. Existing Stripe accounts are **not** auto-connected.
 - **Reason**: PCI-safe, matches existing pack prices, works on web demo (`localhost:8091`).
 - **Impact**: `015_stripe_payments.sql`, `create-checkout-session`, updated `stripe-webhook`; owner must set Stripe secrets.
 

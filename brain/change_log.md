@@ -5,6 +5,19 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-08-18 — Brain: site, iPad demo, TestFlight, RLS advisor
+
+- Marketing site **https://relaxlivingvalet.com** is live (not the Flutter app).
+- iPad cannot use `localhost:8091`; same-Wi-Fi LAN IP until TestFlight.
+- In-person install path: Apple Developer + Mac + Xcode → TestFlight (not public App Store first). Windows cannot build iOS.
+- Hosted Advisor: RLS still **off** on core tables; 012–014 not applied. Stripe functions deployed; secrets still owner action.
+- Clarified: Property Manager dashboard = apartment office; Owner = Relaxed Living.
+
+### 2026-08-14 — Marketing site live
+
+- Public site: **https://relaxlivingvalet.com**
+- App is still Flutter web on `localhost:8091` (PC only). iPad demo needs same Wi-Fi + computer LAN IP, or a hosted web build. Site is marketing, not the Flutter app.
+
 ### 2026-08-13 — Stripe Checkout for packs and paid comebacks
 
 - Migration `015_stripe_payments.sql` — `payment_orders`; nullable `pickup_id`; Stripe session columns

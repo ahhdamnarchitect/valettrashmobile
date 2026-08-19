@@ -2,12 +2,14 @@
 
 **Goal:** Demo to apartment complexes → pilot 2–4 properties → App Store / Play Store release with production-grade security.
 
-**Current readiness (May 2026):**
+**Current readiness (Aug 2026):**
 | Milestone | Estimate |
 |---|---|
-| Sales demo (web, test data) | **Ready now** |
-| Limited pilot (1–2 properties, monitored) | **~2–4 weeks** after security sprint |
-| Public store launch (hardened) | **~4–8 weeks** |
+| Sales demo (web on PC, test data) | **Ready now** (`localhost:8091`) |
+| iPad in-person (Safari + same Wi-Fi LAN IP) | **Ready now** if PC is running Flutter |
+| iPad installable (TestFlight) | Needs Apple Developer + Mac |
+| Limited pilot (1–2 properties, monitored) | After RLS 012–014 + Stripe secrets |
+| Public store launch (hardened) | After TestFlight + Privacy/Terms + native GPS/CSV |
 
 No app is “unhackable.” Target: **RLS everywhere**, least privilege, monitoring, and incident runbooks.
 
@@ -24,9 +26,9 @@ Protects *you* as the company. Prefer lawyer-reviewed templates.
 | 3 | General liability + E&O insurance | [ ] |
 | 4 | Property management agreements (per complex) | [ ] |
 | 5 | Worker / contractor agreements | [ ] |
-| 6 | **Privacy Policy** published at public URL | [ ] |
+| 6 | **Privacy Policy** published at public URL | [ ] (site live: relaxlivingvalet.com) |
 | 7 | **Terms of Service** published at public URL | [ ] |
-| 8 | Support / contact page; cookie notice if marketing site | [ ] |
+| 8 | Support / contact page; cookie notice if marketing site | [ ] site: **https://relaxlivingvalet.com** |
 
 **First technical step after (or parallel):** apply migrations `012` → `013` → `014` on hosted Supabase.
 
@@ -118,9 +120,10 @@ Protects *you* as the company. Prefer lawyer-reviewed templates.
 - [ ] Privacy policy URL + Data safety form
 
 ### iOS
-- [ ] macOS + Xcode + Apple Developer ($99/yr)
+- [ ] macOS + Xcode + Apple Developer ($99/yr) — **cannot build from Windows**
 - [ ] `flutter build ipa`
-- [ ] TestFlight → App Store review
+- [ ] **TestFlight first** for apartment walkthroughs (internal testers)
+- [ ] Public App Store review after Privacy/Terms URLs
 - [ ] Privacy nutrition labels
 
 ### App metadata

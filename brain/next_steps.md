@@ -10,9 +10,10 @@ See **`brain/go_live_checklist.md`** for full detail.
 - [ ] Liability + E&O insurance
 - [ ] Property management agreements (lawyer review)
 - [ ] Worker / contractor agreements
-- [ ] Privacy Policy at public URL
+- [x] Marketing site **https://relaxlivingvalet.com**
+- [ ] Privacy Policy at public URL (put on that site)
 - [ ] Terms of Service at public URL
-- [ ] Support / contact page
+- [ ] Support / contact page on the site
 
 ### Step 2 — Database security (this week)
 - [ ] **Apply `012_workforce_labor.sql`** on hosted Supabase
@@ -43,11 +44,14 @@ See **`brain/go_live_checklist.md`** for full detail.
 - [ ] Test checkout with `4242…` card as resident
 - [ ] Stripe Connect (driver payouts) after bank + live Stripe account
 
-### Step 6 — App stores
-- [ ] Link Privacy + Terms in app + store listings
+### Step 6 — In-person device + stores
+- [ ] Same-Wi-Fi iPad demo: PC `flutter run` port 8091 → iPad Safari `http://<PC-IPv4>:8091`
+- [ ] Enroll **Apple Developer** ($99, prefer LLC)
+- [ ] Get **Mac + Xcode** (required; cannot IPA from Windows)
+- [ ] Publish Privacy + Terms on relaxlivingvalet.com; add URLs to store listing
+- [ ] `flutter build ipa --release` → App Store Connect → **TestFlight** (demo path before public review)
 - [ ] Play Data safety / Apple App Privacy labels
 - [ ] `flutter build appbundle --release` (Android)
-- [ ] `flutter build ipa --release` (iOS — Mac + Apple Developer)
 - [ ] Native GPS (`geolocator`) + CSV `share_plus`
 
 ---
@@ -68,7 +72,9 @@ See **`brain/go_live_checklist.md`** for full detail.
 
 - [x] Owner/admin two-way switch — `8b5b8aa` / `c5af2db`
 - [x] Go-live checklist + RLS migration 014 — `2f0c9b8`
-- [ ] Brain refresh with ordered Step 1 legal playbook — this session
+- [x] Brain refresh with ordered Step 1 legal playbook — `5e86663`
+- [x] Stripe Checkout wiring — `7c5d417`
+- [x] Brain: site, iPad LAN demo, TestFlight path, RLS advisor (Aug 18)
 
 ---
 
