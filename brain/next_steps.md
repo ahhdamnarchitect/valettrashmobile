@@ -38,22 +38,24 @@ Probed every role against the live API and ran the app. Migrations `026`–`029`
   and never sent one to Apple, so it could not have worked even once configured.
 - **`ResidentServiceCalendarScreen` wired in** (service windows + holiday schedule).
 
-### Still unreached — deliberately, not oversights
+### Dead code — removed 2026-08-20
 
-Five files nothing imports. **None should be wired as-is**; wiring them would expose
-non-functional UI:
+All five unimported screens deleted (2,051 lines). Every screen in `lib/` is now
+reachable from the running app. Each was checked for unique value first:
 
-| File | Why it stays out |
-|---|---|
-| `resident_services_screen.dart` | every action is a "coming soon" toast; superseded by the inline Extra Services tab |
-| `resident_extra_services_screen.dart` | same |
-| `manager_property_services_screen.dart` | 200 lines, all "coming soon" (power washing, dumpster, pressure washing, compactor) |
-| `manager_alerts_screen.dart` | duplicate of `SimpleNotificationSenderScreen`, which is already wired in 3 places and has a property selector |
-| `property_manager_dashboard_screen.dart` | superseded by `property_manager_dashboard_new.dart` |
+- `property_manager_dashboard_screen` — 882 lines, **zero** `.from()` calls; a static
+  mockup with no data layer, superseded by `property_manager_dashboard_new`.
+- `manager_alerts_screen` — written against `002_notifications.sql`, the alternate
+  schema we never run. Verified live: its insert returns *"Could not find the
+  'audience' column"*. It would have failed on **every** send. Its apparent edge over
+  the wired sender (target by email) was never implemented either.
+- `resident_extra_services_screen` — strict subset of `resident_services_screen`.
+- `resident_services_screen` / `manager_property_services_screen` — every action was a
+  "coming soon" toast.
 
-The three "coming soon" files describe **future paid services** the business may want
-built — worth keeping as a design reference. The two duplicates are safe to delete
-whenever convenient.
+The product intent from the three stubs is preserved in
+`brain/future_services_catalog.md`, including how to build one on top of
+`service_requests` and the existing Stripe path.
 
 ### OAuth — accounts required before Apple/Google sign-in works
 
