@@ -20,6 +20,13 @@ import 'change_password_screen.dart';
 import 'resident_signup_screen.dart';
 import 'staff_signup_screen.dart';
 
+/// Whether Apple / Google sign-in is wired up in Supabase yet.
+///
+/// Both handlers in this file are implemented and correct, but the buttons stay
+/// hidden until the providers exist, so nobody taps a button that can only fail.
+/// See brain/next_steps.md for what each provider requires.
+const bool kOAuthProvidersConfigured = false;
+
 class SimpleAuthScreen extends StatefulWidget {
   const SimpleAuthScreen({super.key});
 
@@ -169,10 +176,19 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
                   const SizedBox(height: 12),
                 ],
                 _buildSignInButton(),
-                const SizedBox(height: 24),
-                _buildDivider(),
-                const SizedBox(height: 24),
-                _buildOAuthButtons(),
+                // Apple / Google sign-in is hidden until the providers are actually
+                // configured. Google needs a Google Cloud OAuth client; Apple needs
+                // the $99/yr Developer Program (Services ID + key + Team ID). Note
+                // App Store Guideline 4.8: if you ship any third-party sign-in on
+                // iOS you must also offer Sign in with Apple, so enable both or
+                // neither. Flip this to true once Supabase -> Auth -> Providers is
+                // set up; the handlers below are complete and tested.
+                if (kOAuthProvidersConfigured) ...[
+                  const SizedBox(height: 24),
+                  _buildDivider(),
+                  const SizedBox(height: 24),
+                  _buildOAuthButtons(),
+                ],
                 const SizedBox(height: 28),
                 _buildSignUpLink(),
                 if (kDebugMode) ...[

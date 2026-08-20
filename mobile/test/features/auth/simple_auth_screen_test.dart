@@ -27,11 +27,17 @@ void main() {
       expect(find.text('Sign In'), findsWidgets);
     });
 
-    testWidgets('renders Apple and Google OAuth buttons', (tester) async {
+    testWidgets('OAuth buttons follow kOAuthProvidersConfigured', (tester) async {
       await tester.pumpWidget(wrap());
       await tester.pump(settle);
-      expect(find.text('Apple'), findsOneWidget);
-      expect(find.text('Google'), findsOneWidget);
+      // Apple / Google are hidden until the providers are actually configured in
+      // Supabase, so nobody taps a button that can only fail. This asserts the flag
+      // and the UI agree, in whichever state the flag is left.
+      final matcher =
+          kOAuthProvidersConfigured ? findsOneWidget : findsNothing;
+      expect(find.text('Apple'), matcher);
+      expect(find.text('Google'), matcher);
+      expect(find.text('or continue with'), matcher);
     });
 
     testWidgets('renders sign up options', (tester) async {
