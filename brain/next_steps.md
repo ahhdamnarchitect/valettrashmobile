@@ -28,29 +28,49 @@ Probed every role against the live API and ran the app. Migrations `026`–`029`
 | **MED** | Owner Financials cards overflowed at every viewport, clipping the labor subtitles |
 | **LOW** | `simple_auth_screen_test` had been red against main |
 
-### Known gaps — features built but with no entry point
+### Resolved 2026-08-20 — reliability pass
 
-These are complete screens that still need a home in the navigation. Not broken, just
-unreachable, so they are invisible to users:
+- **All 42 silent `catch (_) {}` blocks eliminated.** Six were losing data while
+  telling the user it worked (clock-in → unpaid hours, comeback flagging, comeback
+  completion, message send, rating, invite verification). The other 37 are optional
+  reads that now log via `ErrorReporter.logSilent` instead of vanishing.
+- **Apple sign-in nonce handshake fixed** — it passed `authorizationCode` as the nonce
+  and never sent one to Apple, so it could not have worked even once configured.
+- **`ResidentServiceCalendarScreen` wired in** (service windows + holiday schedule).
 
-- [ ] `resident_service_calendar_screen.dart` — resident service calendar
-- [ ] `manager_alerts_screen.dart` — PM alerts
-- [ ] `manager_property_services_screen.dart` — PM property services
+### Still unreached — deliberately, not oversights
 
-Superseded and safe to delete when convenient: `resident_services_screen.dart` and
-`resident_extra_services_screen.dart` (both "coming soon" stubs, replaced by the inline
-Extra Services tab) and `property_manager_dashboard_screen.dart` (replaced by
-`property_manager_dashboard_new.dart`).
+Five files nothing imports. **None should be wired as-is**; wiring them would expose
+non-functional UI:
 
-Other cleanup worth doing:
-- [ ] **41 empty `catch (_) {}` blocks** across the dashboards. Two of them hid the
-      storage failures above for months. Worth auditing the rest — each one is a
-      failure the user never sees.
-- [ ] Apple / Google sign-in buttons are on the login screen but no OAuth provider is
-      configured in Supabase, so both will fail if tapped. Either configure them or
-      hide the buttons.
+| File | Why it stays out |
+|---|---|
+| `resident_services_screen.dart` | every action is a "coming soon" toast; superseded by the inline Extra Services tab |
+| `resident_extra_services_screen.dart` | same |
+| `manager_property_services_screen.dart` | 200 lines, all "coming soon" (power washing, dumpster, pressure washing, compactor) |
+| `manager_alerts_screen.dart` | duplicate of `SimpleNotificationSenderScreen`, which is already wired in 3 places and has a property selector |
+| `property_manager_dashboard_screen.dart` | superseded by `property_manager_dashboard_new.dart` |
 
-### Remaining — owner action only (I can't do these)
+The three "coming soon" files describe **future paid services** the business may want
+built — worth keeping as a design reference. The two duplicates are safe to delete
+whenever convenient.
+
+### OAuth — accounts required before Apple/Google sign-in works
+
+The buttons are on the login screen and fail with a clear message until configured.
+
+- **Google:** free. A Google Cloud project + OAuth client IDs (separate ones for web,
+  iOS and Android), then paste the client ID/secret into Supabase → Auth → Providers.
+- **Apple: requires the Apple Developer Program, $99/year.** You need a Services ID,
+  a Sign in with Apple key (.p8) and your Team ID. You already need this account for
+  TestFlight and the App Store, so it is not an extra cost — just a prerequisite.
+- **Apple's rule matters here:** App Store Guideline 4.8 requires offering Sign in
+  with Apple if you offer any other third-party sign-in. So on iOS you cannot ship
+  Google-only — it is both or neither.
+- Until then: either configure both, or hide the two buttons. Email/password works
+  today and is what all six roles use.
+
+### Remaining — owner action only### Remaining — owner action only (I can't do these)
 
 - [ ] **Set the Stripe secrets** on the new project: `STRIPE_SECRET_KEY`,
       `STRIPE_WEBHOOK_SECRET`, `APP_ORIGIN` (Edge Functions → Secrets). Both functions are
