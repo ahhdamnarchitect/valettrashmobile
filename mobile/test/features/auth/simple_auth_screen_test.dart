@@ -34,10 +34,15 @@ void main() {
       expect(find.text('Google'), findsOneWidget);
     });
 
-    testWidgets('renders sign up link', (tester) async {
+    testWidgets('renders sign up options', (tester) async {
       await tester.pumpWidget(wrap());
       await tester.pump(settle);
-      expect(find.text('Sign up'), findsOneWidget);
+      // The single "Sign up" link this test used to look for was replaced by
+      // separate Resident / Staff signup buttons, which take different invite
+      // flows. The test was never updated, so it had been red against main.
+      expect(find.text("Don't have an account?"), findsOneWidget);
+      expect(find.text('Resident'), findsOneWidget);
+      expect(find.text('Staff'), findsOneWidget);
     });
 
     testWidgets('renders forgot password link', (tester) async {

@@ -17,6 +17,8 @@ import '../widgets/extra_services_grid.dart';
 import 'resident_comeback_request_screen.dart';
 import 'resident_concerns_screen.dart';
 import 'resident_notifications_screen.dart';
+import 'resident_report_missed_pickup_screen.dart';
+import 'resident_violations_screen.dart';
 import 'resident_vacation_hold_screen.dart';
 
 class ResidentDashboardScreen extends StatefulWidget {
@@ -586,7 +588,13 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
         ),
         const SizedBox(width: 12),
         Expanded(
+          // The tile showed a violation count with no way to see the violations
+          // themselves - ResidentViolationsScreen existed but nothing opened it.
           child: BentoCard(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ResidentViolationsScreen()),
+            ),
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,6 +660,23 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             title: 'Service History',
             subtitle: 'View past pickups',
             onTap: () => _openExtraServices(segment: 0),
+          ),
+          const Divider(height: 1, color: AppColors.border),
+          // ResidentReportMissedPickupScreen was fully built but nothing imported it,
+          // so residents had no way to report a missed pickup - the trigger for the
+          // whole comeback loop.
+          _quickActionTile(
+            icon: Icons.report_gmailerrorred_outlined,
+            title: 'Report a Missed Pickup',
+            subtitle: 'Tell us if we missed your door',
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ResidentReportMissedPickupScreen()),
+              );
+              if (mounted) _load();
+            },
           ),
           const Divider(height: 1, color: AppColors.border),
           _quickActionTile(
