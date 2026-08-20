@@ -396,7 +396,7 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             ),
             const SizedBox(height: 12),
           ],
-          _buildMockHeader(),
+          _buildResidentHeader(),
           const SizedBox(height: 16),
           _buildNextPickupCard(),
           const SizedBox(height: 12),
@@ -414,7 +414,9 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
     );
   }
 
-  Widget _buildMockHeader() {
+  // Renamed from _buildMockHeader: it renders live data (_residentName,
+  // _workerStatusColor) and the old name made it look like a placeholder.
+  Widget _buildResidentHeader() {
     return Row(
       children: [
         CircleAvatar(
