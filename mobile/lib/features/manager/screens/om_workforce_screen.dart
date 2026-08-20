@@ -7,6 +7,7 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/stat_tile.dart';
 import '../../../core/workforce/clock_hours.dart';
 import 'om_worker_map_screen.dart';
+import '../../../core/utils/error_reporter.dart';
 
 /// Operations Manager: worker timecards, clock status, link to live map.
 class OmWorkforceScreen extends StatefulWidget {
@@ -120,7 +121,9 @@ class _OmWorkforceScreenState extends State<OmWorkforceScreen> {
               .select('user_id, property_id, latitude, longitude, updated_at')
               .filter('user_id', 'in', '(${workerIds.join(',')})');
           locs = List<Map<String, dynamic>>.from(locRows as List);
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('om_workforce_screen.operation', e);
+        }
       }
 
       if (!mounted) return;

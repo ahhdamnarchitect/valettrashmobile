@@ -16,6 +16,7 @@ import '../../../core/widgets/role_bottom_nav.dart';
 import '../../../core/widgets/skeleton_card.dart';
 import 'pm_compliance_report_screen.dart';
 import 'simple_notification_sender_screen.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class PropertyManagerDashboardNewScreen extends StatefulWidget {
   const PropertyManagerDashboardNewScreen({super.key});
@@ -205,7 +206,9 @@ class _PropertyManagerDashboardNewScreenState
             .eq('id', uid)
             .maybeSingle();
         if (profile != null) _firstName = profile['first_name']?.toString();
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('property_manager_dashboard_new._loadData', e);
+      }
 
       final userPropsRows = await client
           .from('user_properties')
@@ -321,7 +324,9 @@ class _PropertyManagerDashboardNewScreenState
             final completed = recentRuns.where((r) => r['status'] == 'completed').length;
             serviceCompliance = completed / recentRuns.length;
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('property_manager_dashboard_new.operation', e);
+        }
         try {
           final ratings = await client
               .from('satisfaction_ratings')
@@ -333,7 +338,9 @@ class _PropertyManagerDashboardNewScreenState
                 0, (acc, r) => acc + (r['rating'] as int? ?? 0).toDouble());
             avgSatisfaction = sum / ratingList.length;
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('property_manager_dashboard_new.operation', e);
+        }
 
         try {
           final comebackRows = await client
@@ -352,7 +359,9 @@ class _PropertyManagerDashboardNewScreenState
               .map((r) => Map<String, dynamic>.from(r as Map))
               .toList();
           pendingComebackCount = pendingComebacks.length;
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('property_manager_dashboard_new.operation', e);
+        }
 
         // Recent announcements for PM's properties
         try {
@@ -363,7 +372,9 @@ class _PropertyManagerDashboardNewScreenState
               .order('created_at', ascending: false)
               .limit(3);
           recentAnnouncements = List<Map<String, dynamic>>.from(announcements as List);
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('property_manager_dashboard_new.operation', e);
+        }
       }
 
       setState(() {
@@ -808,7 +819,9 @@ class _PropertyManagerDashboardNewScreenState
     try {
       final dt = DateTime.parse(createdAt).toLocal();
       dateLabel = '${dt.month}/${dt.day}';
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('property_manager_dashboard_new._buildAnnouncementRow', e);
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),

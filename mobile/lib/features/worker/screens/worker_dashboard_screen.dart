@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/storage/photo_storage.dart';
+import '../../../core/utils/error_reporter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/bento_card.dart';
@@ -91,7 +92,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         if (profile != null) {
           _firstName = profile['first_name']?.toString();
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('worker_dashboard_screen._loadRouteData', e);
+      }
 
       // Worker assignments
       final assigns = await client
@@ -155,7 +158,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           if (runList.isNotEmpty) {
             _activeRunId = runList.first['id']?.toString();
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('worker_dashboard_screen.operation', e);
+        }
       }
 
       // Load stops if we have an active route
@@ -204,7 +209,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           final ts = lastEvent['created_at']?.toString();
           if (ts != null) _clockedInAt = DateTime.tryParse(ts);
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('worker_dashboard_screen.operation', e);
+      }
     } catch (_) {
       _comebackRequests = [];
     } finally {
@@ -234,7 +241,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           completedIds = (completed as List)
               .map((c) => c['stop_id'].toString())
               .toSet();
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('worker_dashboard_screen._loadStops', e);
+        }
       }
 
       final remaining = allStops.where((s) => !completedIds.contains(s['id']?.toString())).map((s) {
@@ -254,7 +263,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           _currentStopIndex = 0;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('worker_dashboard_screen._loadStops', e);
+    }
   }
 
   Future<void> _completeStop(String stopId,
@@ -306,7 +317,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         }
       }
       if (mounted) setState(() => _conversations = convMap.values.toList());
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('worker_dashboard_screen._loadMessages', e);
+    }
   }
 
   void _subscribeMessages() {
@@ -338,7 +351,18 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           'status': 'completed',
           'completed_at': DateTime.now().toUtc().toIso8601String(),
         }).eq('id', id);
-      } catch (_) {}
+      } catch (e) {
+        // Was swallowed, and the row was then removed from the list anyway - so the
+        // comeback vanished from the worker's screen while still sitting pending in
+        // the database. Keep it visible and say what happened.
+        ErrorReporter.showError(
+          mounted ? context : null,
+          'Could not mark this comeback complete - it stays on your list',
+          error: e,
+          logContext: 'missed_pickup_requests complete',
+        );
+        return;
+      }
     }
     if (mounted) {
       setState(() => _comebackRequests.removeAt(index));
@@ -413,7 +437,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                         photoBytes = bytes;
                         photoName = file.name;
                       });
-                    } catch (_) {}
+                    } catch (e) {
+                      ErrorReporter.logSilent('worker_dashboard_screen._showCompleteSheet', e);
+                    }
                   },
                   child: Container(
                     height: photoBytes != null ? null : 100,
@@ -524,6 +550,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           'No property assigned yet. Ask your admin to assign you under Worker Assignments.');
       return;
     }
+    final previousOnDuty = _isOnDuty;
+    final previousClockedInAt = _clockedInAt;
     setState(() {
       _isOnDuty = newState;
       _clockedInAt = newState ? DateTime.now() : null;
@@ -534,7 +562,26 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         'event_type': newState ? 'clock_in' : 'clock_out',
         'property_id': _propertyId,
       });
-    } catch (_) {}
+    } catch (e) {
+      // This used to be swallowed while the UI still switched to ON DUTY and said
+      // so. The clock event drives payroll, so a silent failure meant unpaid hours
+      // and a worker with no reason to suspect anything. Roll the state back.
+      if (mounted) {
+        setState(() {
+          _isOnDuty = previousOnDuty;
+          _clockedInAt = previousClockedInAt;
+        });
+      }
+      ErrorReporter.showError(
+        mounted ? context : null,
+        newState
+            ? 'Could not clock in - check your connection and try again'
+            : 'Could not clock out - check your connection and try again',
+        error: e,
+        logContext: 'clock_events insert',
+      );
+      return;
+    }
     _snack(newState
         ? 'You are on duty — residents at this property will see ON DUTY'
         : 'You are now off duty');
@@ -1424,7 +1471,17 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         'status': 'pending',
         'requested_at': DateTime.now().toIso8601String(),
       });
-    } catch (_) {}
+    } catch (e) {
+      // Previously swallowed, and then _snack said "Comeback flagged" regardless.
+      // A resident who reported a missed pickup would simply never be serviced.
+      ErrorReporter.showError(
+        mounted ? context : null,
+        'Could not flag this comeback - please try again',
+        error: e,
+        logContext: 'missed_pickup_requests insert',
+      );
+      return;
+    }
     _snack('Comeback flagged');
     _advanceStop();
   }
@@ -1832,7 +1889,10 @@ class _WorkerConversationScreenState
       if (mounted) {
         setState(() => _messages = List<Map<String, dynamic>>.from(msgs));
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.showError(mounted ? context : null, 'Could not load messages',
+          error: e, logContext: 'direct_messages load');
+    }
   }
 
   void _subscribe() {
@@ -1863,7 +1923,13 @@ class _WorkerConversationScreenState
         'body': text,
       });
       await _load();
-    } catch (_) {
+    } catch (e) {
+      // The field was cleared before the insert, so a swallowed failure meant the
+      // worker watched their message disappear and assumed it sent. Restore it.
+      _ctrl.text = text;
+      ErrorReporter.showError(mounted ? context : null,
+          'Message not sent - tap send to try again',
+          error: e, logContext: 'direct_messages send');
     } finally {
       if (mounted) setState(() => _sending = false);
     }

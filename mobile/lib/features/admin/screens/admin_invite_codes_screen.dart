@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class AdminInviteCodesScreen extends StatefulWidget {
   final List<Map<String, dynamic>> properties;
@@ -65,7 +66,9 @@ class _AdminInviteCodesScreenState extends State<AdminInviteCodesScreen> {
           _units = List<Map<String, dynamic>>.from(rows as List);
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('admin_invite_codes_screen._loadUnits', e);
+    }
   }
 
   Future<void> _revokeCode(String id) async {

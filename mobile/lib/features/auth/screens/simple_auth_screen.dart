@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -92,24 +95,40 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
     }
   }
 
+  /// Cryptographically random nonce for the Apple sign-in handshake.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
+        .join();
+  }
+
   Future<void> _signInWithApple() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
     try {
+      // Apple's nonce handshake: send the SHA-256 hash to Apple, then send the RAW
+      // value to Supabase, which compares it against the nonce claim inside the ID
+      // token. This previously passed credential.authorizationCode as the nonce -
+      // a different value entirely - and never sent a nonce to Apple at all, so
+      // validation could not have succeeded even with the provider configured.
+      final rawNonce = _generateNonce();
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
       );
       final idToken = credential.identityToken;
       if (idToken == null) throw Exception('Apple sign-in failed: no identity token');
       await Supabase.instance.client.auth.signInWithIdToken(
         provider: Provider.apple,
         idToken: idToken,
-        nonce: credential.authorizationCode,
+        nonce: rawNonce,
       );
     } catch (e) {
       if (!mounted) return;

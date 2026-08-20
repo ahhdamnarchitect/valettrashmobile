@@ -9,6 +9,7 @@ import '../../../core/storage/photo_storage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/lottie_feedback.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class ResidentReportMissedPickupScreen extends StatefulWidget {
   const ResidentReportMissedPickupScreen({super.key});
@@ -46,7 +47,9 @@ class _ResidentReportMissedPickupScreenState
         _photoBytes = bytes;
         _photoName = file.name;
       });
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('resident_report_missed_pickup_screen._pickPhoto', e);
+    }
   }
 
   Future<void> _submit() async {
@@ -105,7 +108,9 @@ class _ResidentReportMissedPickupScreenState
             pickupId = pickup?['id']?.toString();
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('resident_report_missed_pickup_screen._submit', e);
+      }
 
       // Build insert data — include notes and photo_url only if columns exist
       final insertData = <String, dynamic>{

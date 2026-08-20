@@ -22,6 +22,7 @@ import '../../shared/screens/service_requests_inbox_screen.dart';
 import '../../worker/screens/worker_dashboard_screen.dart';
 import 'owner_workforce_screen.dart';
 import '../widgets/owner_admin_switch_bar.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -206,7 +207,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             mrrByProp[pid] =
                 (mrrByProp[pid] ?? 0) + ((s['monthly_fee'] as num?)?.toDouble() ?? 0);
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
 
         try {
           final inv = await client
@@ -220,7 +223,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             invoicesByProp[pid] =
                 (invoicesByProp[pid] ?? 0) + ((i['amount'] as num?)?.toDouble() ?? 0);
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
 
         try {
           final paidCb = await client
@@ -235,7 +240,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             final cents = (r['payment_amount_cents'] as num?)?.toDouble() ?? 0;
             comebacksByProp[pid] = (comebacksByProp[pid] ?? 0) + cents / 100;
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
 
         for (final p in properties) {
           final pid = p['id']?.toString() ?? '';
@@ -286,7 +293,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             payoutSum += (row['amount'] as num?)?.toDouble() ?? 0;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+      }
 
       double laborWeekH = 0;
       double laborWeekC = 0;
@@ -327,7 +336,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             laborMonthC += ClockHours.laborCost(hours: mh, hourlyRate: rate);
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+      }
 
       properties.sort(
           (a, b) => (a['name'] as String).compareTo(b['name'] as String));
@@ -343,7 +354,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               .select('id')
               .eq('status', 'completed');
           completedCb = (cbRows as List).length;
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
         try {
           final ratings = await client
               .from('satisfaction_ratings')
@@ -355,7 +368,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 0, (acc, r) => acc + (r['rating'] as int? ?? 0).toDouble());
             avgRating = sum / ratingList.length;
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
       }
 
       // Month-over-month: last month's comebacks and satisfaction
@@ -389,7 +404,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             lastMonthRating = sum / ratingList2.length;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+      }
 
       setState(() {
         _properties = properties;
