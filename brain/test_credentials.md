@@ -1,6 +1,10 @@
 # Test Credentials
 
-All accounts are in the Supabase project `airpwzzkyjqzeeqizvft` (relaxed-living, AWS us-east-2).
+> **✅ Live on the dedicated project `immiejqvnucndjspacwv` (verified 2026-08-19).**
+> All seven accounts below exist in `auth.users`, have matching `public.users` profile rows
+> with the correct role, and **password sign-in was tested end-to-end against the live API**.
+> Email confirmation is off (signup is gated by invite codes instead), so accounts work
+> immediately. Password policy: min 8 chars, upper + lower + digit + symbol.
 
 App runs at: `http://localhost:8091` (this PC). iPad on same Wi-Fi: `http://<PC-IPv4>:8091`. Marketing site is **https://relaxlivingvalet.com** (not the app).
 

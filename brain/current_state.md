@@ -1,7 +1,19 @@
 # Current State
 
 ## Current Objective
-**Go-live readiness** — legal foundation + security sprint (RLS) → pilot → store release. Repo migrations through **014**. Master plan: **`brain/go_live_checklist.md`**.
+**Backend is done and audited (2026-08-19).** Live on the dedicated Supabase project
+`immiejqvnucndjspacwv`: 33 tables, RLS on **all** of them, 122 policies, **0 Security Advisor
+errors**, both Edge Functions deployed, all 7 demo accounts verified logging in with each role
+correctly scoped. Repo migrations through **025**.
+
+Ten migrations (`016`–`025`) fixed four latent defects that had been in the repo since the
+beginning plus six security/access findings — including a **confirmed data leak** (`audit_logs`
+was readable by any authenticated user) and a **Stripe webhook bug** that would have charged
+customers without delivering credits. Details: `supabase/MIGRATIONS.md`.
+
+Remaining before launch is owner action only: Stripe secrets, webhook endpoint, GitHub
+integration re-link, custom SMTP. See `brain/next_steps.md`. Master plan:
+**`brain/go_live_checklist.md`**.
 
 ## Resume Here (next session)
 **Ordered playbook (do in sequence):**
@@ -32,10 +44,13 @@ App: **http://localhost:8091** (this PC only). iPad on same Wi-Fi: `http://<this
 
 | Item | Value |
 |---|---|
-| Project | `relaxedl-living` |
-| Ref | `airpwzzkyjqzeeqizvft` |
-| Region | AWS us-east-2 |
-| MCP | `project_ref=airpwzzkyjqzeeqizvft` |
+| Project | **RLV** (org: Relaxed Living Valet, Free plan) |
+| Ref | `immiejqvnucndjspacwv` |
+| Branch | `main` (production) |
+| Auth | email/password; confirm-email **off** (invite-code gated); min 8 chars + all classes |
+| Storage | `violations` bucket, **private**, 5 policies |
+| Edge Functions | `create-checkout-session` (JWT on), `stripe-webhook` (JWT **off**) |
+| MCP | `project_ref=immiejqvnucndjspacwv` |
 
 ### Live migrations (hosted)
 | Hosted name | Repo file | What it does |

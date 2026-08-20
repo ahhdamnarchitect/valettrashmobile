@@ -1,60 +1,47 @@
 # Next Steps
 
-## Ordered go-live sequence (do in order)
+## ✅ Supabase project switch — COMPLETE (2026-08-19)
 
-See **`brain/go_live_checklist.md`** for full detail.
+Live on the dedicated project **`immiejqvnucndjspacwv`**. Schema applied, security audited,
+backend built out, and verified against the live API.
 
-### Step 1 — Legal & business (protect the owner)
-- [x] LLC / corporation confirmed
-- [ ] Business bank account (needed for Stripe)
-- [ ] Liability + E&O insurance
-- [ ] Property management agreements (lawyer review)
-- [ ] Worker / contractor agreements
-- [x] Marketing site **https://relaxlivingvalet.com**
-- [ ] Privacy Policy at public URL (put on that site)
-- [ ] Terms of Service at public URL
-- [ ] Support / contact page on the site
+**Verified working:** 33 tables with RLS on all of them, 122 policies, **0 Security Advisor
+errors**, all 7 demo accounts log in, every role correctly scoped, both Edge Functions deployed,
+private `violations` storage bucket, auth URLs + password policy configured.
 
-### Step 2 — Database security (this week)
-- [ ] **Apply `012_workforce_labor.sql`** on hosted Supabase
-- [ ] **Apply `013_unify_owner_role.sql`** on hosted Supabase
-- [ ] **Apply `014_launch_rls_hardening.sql`** on hosted Supabase
-- [ ] Run **`supabase/tests/rls_role_smoke.sql`** — zero tables without RLS
-- [ ] Supabase Database Linter — clear security warnings
+**Ten migrations added** (`016`–`025`) fixing four latent defects and six security/access
+findings — including a confirmed data leak in `audit_logs` and a Stripe webhook bug that would
+have charged customers without delivering credits. Full detail: `supabase/MIGRATIONS.md`.
 
-### Step 3 — Role QA (after RLS)
-- [ ] Owner/Admin switch both directions
-- [ ] Resident invite signup end-to-end
-- [ ] Worker clock in → OM ON DUTY → owner labor $
-- [ ] PM invite codes only for assigned properties
-- [ ] Staff invite → correct role dashboard
+### Remaining — owner action only (I can't do these)
 
-### Step 4 — Environments & auth
-- [ ] Staging Supabase project (fake data only)
-- [ ] Production Supabase project (no test accounts)
-- [ ] Production Site URL + Redirect URLs (not localhost)
-- [ ] Email provider (Resend/SendGrid) for password reset
-- [ ] `service_role` never in Flutter; anon key only
+- [ ] **Set the Stripe secrets** on the new project: `STRIPE_SECRET_KEY`,
+      `STRIPE_WEBHOOK_SECRET`, `APP_ORIGIN` (Edge Functions → Secrets). Both functions are
+      deployed and currently return a graceful `503 "Stripe is not configured"`. Needs the
+      real Stripe account — see `brain/stripe_setup.md`.
+- [ ] **Point the Stripe webhook endpoint** at
+      `https://immiejqvnucndjspacwv.supabase.co/functions/v1/stripe-webhook`.
+- [ ] **Re-link the GitHub integration** to the new project, or migrations keep deploying to
+      the old one.
+- [ ] **Configure custom SMTP** before public launch. The built-in mailer is capped at ~2–3
+      emails/hour, so password reset is effectively unusable at scale. Once SMTP is in place you
+      may want email confirmation back on — but that needs an app change first (see below).
+- [ ] **Upgrade to Pro** if you want leaked-password protection (HaveIBeenPwned) — Free can't.
 
-### Step 5 — Pilot (1–2 properties)
-- [ ] Onboard per `brain/resident_invite_workflow.md`
-- [ ] Support runbook (reset password, re-issue invite, wrong role)
-- [ ] Error monitoring (Sentry/Crashlytics) in release builds
-- [ ] **Stripe secrets** — set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_ORIGIN` and deploy functions (`brain/stripe_setup.md`)
-- [ ] Test checkout with `4242…` card as resident
-- [ ] Stripe Connect (driver payouts) after bank + live Stripe account
+### Follow-ups that need app changes first
 
-### Step 6 — In-person device + stores
-- [ ] Same-Wi-Fi iPad demo: PC `flutter run` port 8091 → iPad Safari `http://<PC-IPv4>:8091`
-- [ ] Enroll **Apple Developer** ($99, prefer LLC)
-- [ ] Get **Mac + Xcode** (required; cannot IPA from Windows)
-- [ ] Publish Privacy + Terms on relaxlivingvalet.com; add URLs to store listing
-- [ ] `flutter build ipa --release` → App Store Connect → **TestFlight** (demo path before public review)
-- [ ] Play Data safety / Apple App Privacy labels
-- [ ] `flutter build appbundle --release` (Android)
-- [ ] Native GPS (`geolocator`) + CSV `share_plus`
-
----
+- [ ] **"Require current password when updating" / "Secure password change"** are OFF on
+      purpose. `change_password_screen.dart` calls `updateUser(password:)` without the old
+      password and the same screen handles recovery, so enabling either would break password
+      reset. Add re-authentication to the screen, then enable.
+- [ ] **Re-enabling email confirmation** needs `resident_signup_screen.dart` to handle
+      `signUp()` returning no session (it currently calls `claim_invite_code` straight after).
+- [ ] Two real resident accounts (`devinbooker817@`, `powellreggie23@`) have unknown passwords —
+      they can only be re-invited, not recreated.
+- [ ] **Apply `016`–`025` to the OLD project** if it stays in use — it carries every one of
+      these defects, including the audit-log leak.
+- [ ] Tell the client the run command changed: `--dart-define-from-file=dart_define.json`.
+- [ ] `flutter clean` before the next deploy build (stale `build/web/assets/.env` from May).
 
 ## Before Submitting to Stores (reference)
 

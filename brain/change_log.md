@@ -5,6 +5,151 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-08-19 — Pulled 25 commits; repo hygiene; switched to dedicated Supabase project
+
+- **Pulled `origin/main`** (fast-forward, `f46aaef` → `33c268b`, 25 commits). Resolves the fork-sync
+  risk flagged on 2026-08-11 — the remote *had* moved on (Stripe checkout, owner/admin unification,
+  RLS hardening, migrations 009–015, marketing site).
+- **Discarded ~79 files of CRLF working-tree noise** (verified line-ending-only, no content), and added
+  **`.gitattributes`** (`* text=auto eol=lf` + binary rules) so it cannot recur. Closes the
+  normalization item in `next_steps.md`. **Files:** `.gitattributes`.
+- **Untracked `mobile/.env`** (`git rm --cached`; file kept on disk). `mobile/.gitignore` already had
+  `.env`, but the tracked copy overrode it. ⚠️ The old anon key remains in git history — moot now that
+  the project changed, but note it if the old project is ever reused.
+- **Switched Supabase to the dedicated project `immiejqvnucndjspacwv`** (was `airpwzzkyjqzeeqizvft`).
+  Both apps read config from env, so no Dart/TS changes were needed. **Files:** `mobile/.env.example`,
+  `mobile/README.md`, `supabase/MIGRATIONS.md`, `brain/current_state.md`, `brain/stripe_setup.md`,
+  `brain/handoff_for_external_ai.md`, `brain/test_credentials.md`. Old ref deliberately left in
+  `brain/change_log.md` and `docs/superpowers/plans/` (historical record) and `.cursor/mcp.json` (retired).
+- **Resolved the long-open 4-vs-6 role-enum conflict.** `007_service_requests.sql` adds `owner` and
+  `009_staff_invites.sql` adds `operations_manager` via `ALTER TYPE ... ADD VALUE IF NOT EXISTS`. The
+  repo migrations *do* now cover all six roles; the 2026-08-09 concern is closed.
+- **Found two provisioning traps and built `supabase/provision/`** (4 ordered bundles) around them:
+  1. `007`/`009` add an enum value then use it in the same script → Postgres `unsafe use of new value`.
+     Split the two `ALTER TYPE` statements into `part2`, which must commit before `part3`.
+  2. `seed_data/001_seed_users.sql` inserts hardcoded UUIDs but `public.users.id` is FK to
+     `auth.users(id)` → every insert fails on a fresh project; seeds `004`–`009` inherit the problem.
+     `part4` keys profile rows to real auth UUIDs by email lookup instead.
+- **Rewrote `supabase/MIGRATIONS.md`** — it stopped at `008`, omitted both traps, and told you to run
+  seeds in numeric order (which fails). Now documents `009`–`015`, the provision bundles, and a
+  per-seed safety table. Also confirmed `002_indexes.sql` / `003_triggers_functions.sql` are exact
+  duplicates of the `001` baseline and that `002_indexes.sql` lacks `IF NOT EXISTS` guards.
+### 2026-08-19b — Security audit + backend completion (ship-ready)
+
+- **Created the 7 demo auth users** via SQL (`provision/part4a_auth_users.sql`) with bcrypt
+  password hashes + `auth.identities` rows, then ran part4/part5. **Verified every role can
+  actually log in** through `/auth/v1/token`. 7 auth users = 7 profile rows, correct roles.
+- **Wired the demo**: PM -> Sunset Gardens via `user_properties`, worker via
+  `worker_assignments`, resident to unit 104 via `resident_units`.
+- **Found and fixed a confirmed-exploitable data leak.** `audit_logs` had
+  `USING (auth.uid() IS NOT NULL)` - ANY authenticated user could read it, and it stores
+  `row_to_json()` snapshots of every change to properties, units, resident_units, violations
+  and subscriptions. A resident test account read all 67 rows including property billing
+  rates. Now owner-tier only (`020`). **This was a real vulnerability, not a lint warning.**
+- **Fixed the owner seeing nothing.** `013` made `owner` canonical but 22 admin policies still
+  tested `super_admin`, and `014` covered only 3 of 32 tables - so the business owner logged in
+  to 0 units, 0 buildings, 0 routes, 0 invoices. Widened to `is_owner_admin()` (`020`).
+- **`stop_completions` did not exist.** The worker dashboard reads AND writes it; the read was
+  swallowed by `catch (_) {}` so stops never cleared, and the insert threw. Created with RLS (`022`).
+- **PM and ops-manager access fixed.** PMs assigned via `user_properties` (what the app does)
+  couldn't see their own properties/buildings/floors/units; `operations_manager` had no access
+  to anything. (`021`, `022`, `023`)
+- **Function hardening (`024`)**: pinned `search_path` on `audit_trigger` (a definer-escalation
+  vector) and `handle_updated_at`; revoked anon EXECUTE on the privileged RPCs.
+- **Moved all 10 RLS helpers to a non-exposed `private` schema (`025`)**, rebuilding every
+  affected policy programmatically from `pg_policies`. First proved by experiment that simply
+  revoking EXECUTE is impossible - it yields `permission denied for function can_access_floor`
+  because policies are evaluated as the querying role.
+- **Supabase Security Advisor: 35 warnings -> 8, and 0 errors.** The 8 remaining are by design
+  (invite-code RPCs must be anon/authenticated callable and authorise internally) or Pro-plan
+  only (leaked-password protection).
+- **Auth config**: Site URL `http://localhost:8091`, added both redirect URLs (password reset
+  deep link was impossible before), password policy min 8 + all character classes.
+  **Disabled "Confirm email"** - it was ON, which broke signup two ways: `signUp()` returned no
+  session so the immediately-following `claim_invite_code` RPC failed, and the built-in mailer
+  rate-limited at 2-3/hour. Signup verified working after. Left "Require current password" and
+  "Secure password change" OFF deliberately: the app calls `updateUser(password:)` without the
+  old password and reuses that screen for recovery, so enabling them would break password reset.
+- **Deployed both Edge Functions** through the dashboard editor, with `stripe-webhook` set to
+  **JWT verification OFF** (Stripe calls it without a Supabase token; it authenticates via the
+  Stripe signature instead). Both verified reachable.
+- **Fixed a Stripe bug that would have taken money without delivering.** The webhook used the
+  synchronous `stripe.webhooks.constructEvent()`, which throws
+  `SubtleCryptoProvider cannot be used in a synchronous context` under Deno - the catch turned
+  that into a generic 400 "Bad signature", so **every** webhook would have failed after the
+  customer was charged. Now `constructEventAsync` + `createSubtleCryptoProvider()`.
+- **App-side audit clean**: no secrets in the bundle, no hardcoded keys, no cleartext HTTP, no
+  ATS bypass, permissions all justified, no sensitive data in logs.
+- **Verified end state**: 33 tables, RLS on all, 122 policies, 0 Advisor errors, all 5 roles
+  scoped correctly, resident attack probes all blocked (role escalation `42501`, writes `42501`,
+  privileged RPC `not authorized`), anon sees `[]`.
+
+- **Provisioned the new Supabase project `immiejqvnucndjspacwv` via the dashboard SQL editor.**
+  Confirmed empty first (0 tables / 0 enums / 0 auth users), then applied part1 -> part2 -> part3 -> part4.
+  **Final state: 32 tables, RLS enabled on all 32 (0 without), 101 policies, 2 properties, 56 units,
+  invite code `WELCOME104`.** This closes the ~24 RLS-off Advisor findings the old project carried.
+- **Found and fixed FOUR latent defects that had been in the repo since the beginning.** Each one
+  aborts a migration or breaks the API, and together they explain why RLS was never actually live:
+  1. `004` — `Users can update own profile` used `OLD.role`. `OLD` is trigger-only syntax and is
+     invalid in an RLS policy (`42P01`), which aborted the entire RLS migration. Now a `WITH CHECK`
+     against a new `public.current_user_role()` helper.
+  2. `001` — `audit_trigger()` read `NEW.created_by`; PL/pgSQL resolves every `NEW.<field>` at
+     runtime and **no** audited table has that column (`42703`). Once fixed, `audit_logs.user_id`
+     was `NOT NULL` while system actions have no actor (`23502`). Between them, **every INSERT into
+     properties, buildings, units, resident_units, worker_assignments, violations and subscriptions
+     failed.** Fixed via `to_jsonb(NEW)` lookups + nullable `user_id` (`016`).
+  3. `004` — `42P17: infinite recursion`. A policy on `users` selected `FROM users`; separately
+     `properties` <-> `resident_units` and `properties` <-> `worker_assignments` formed two mutual
+     cycles. Core tables returned HTTP 500. Fixed with `SECURITY DEFINER` helpers (`017`, `018`).
+  4. `004` — the PM violations policy JOINs `units->floors->buildings->properties`, each with its own
+     multi-branch RLS, and timed out (`57014`) on an **empty** table. Collapsed into
+     `public.pm_owns_unit()` (`019`).
+  Access semantics are unchanged in all four; `014` already used this `SECURITY DEFINER` shape for
+  `is_owner_admin()`. Wrote a cycle-detector over the policy graph to confirm only two cycles existed.
+- **Verified end-to-end against the live REST API** with the real publishable key: **28/28 tables
+  return 200**, while anon reads return `[]` against seeded rows and anon writes are rejected with
+  `42501` — RLS is genuinely enforcing, not merely enabled.
+- **Retrieved the publishable key and finished the client switch.** New projects issue
+  `sb_publishable_...` rather than a legacy anon JWT; confirmed the server accepts it (auth health
+  200). Written to gitignored `mobile/dart_define.json`; `flutter build web` succeeds with the URL
+  and key compiled into `main.dart.js` and no `.env` in the bundle.
+- **Not done (cannot be):** creating the auth users. That means entering passwords, which I don't do.
+  `public.users` and `auth.users` are both still empty — see `brain/next_steps.md`.
+- **Cursor tooling stays — reversed an earlier deletion.** `.cursor/rules/`, `.cursor/mcp.json`, and
+  `cursor-os/` had been staged for deletion under the "Cursor is retired" rule in `~/Projects/CLAUDE.md`.
+  **The client actively uses Cursor on this project**, so these are live shared tooling, not stragglers.
+  Restored all 11 files + the README "Cursor Repo OS" section, repointed `.cursor/mcp.json` at
+  `immiejqvnucndjspacwv`, and amended this repo's `CLAUDE.md` so future sessions don't re-delete them.
+- **Moved client config off a bundled `.env` to compile-time `--dart-define-from-file`.**
+  `mobile/pubspec.yaml` listed `.env` as a Flutter **asset**, so it shipped verbatim in every build
+  (fetchable at `/assets/.env` on web). Now: `lib/core/config/app_config.dart` exposes
+  `String.fromEnvironment` values with an `assertConfigured()` guard that throws a readable error
+  naming missing keys; both entry points use it; `.env` dropped from assets; `flutter_dotenv`
+  dependency removed (no longer referenced anywhere in `lib/`). Config lives in gitignored
+  `mobile/dart_define.json`, template committed as `mobile/dart_define.example.json`.
+  **Verified:** `flutter analyze` → 0 errors, 3 pre-existing warnings, none in changed files;
+  `flutter build web --dart-define-from-file=dart_define.json` succeeds; the new project URL is
+  compiled into `main.dart.js`; `.env` is absent from `AssetManifest.json`.
+- **⚠️ Found a stale `build/web/assets/.env` dated May 16** containing the *old* project's URL and
+  anon key. `flutter build` does not clear its output dir, so deploying an uncleaned `build/web/`
+  would have published it. `flutter clean` removes it — now documented in `mobile/README.md`.
+  `mobile/build/` is gitignored and was never committed, so this was a deploy hazard only, not a
+  repo leak.
+- **Clarified the credential model** (no code impact, recorded so it stops being re-litigated): the
+  Supabase anon/publishable key is **not** a secret — it ships in the client by design and RLS is
+  the actual boundary. `service_role` and Stripe secrets stay in Supabase Edge Function secrets,
+  which is already how both Edge Functions read them (`Deno.env.get`). This makes applying `014`
+  (RLS hardening) the highest-value security item: the hosted Advisor still shows RLS **off** on
+  core tables, which means the publicly-shipped key was effectively unrestricted.
+- **`mobile/.env.example` converted to a deprecation pointer** at `dart_define.example.json`.
+  `admin_dashboard/.env.example` is unaffected — that Vite app still uses `.env` legitimately.
+- **Side effect of running `flutter pub get` on a Mac:** Flutter generated `mobile/ios/Podfile` and
+  added the standard `#include?` CocoaPods lines to `ios/Flutter/{Debug,Release}.xcconfig`. Normal
+  Flutter scaffolding, needed for the iOS/TestFlight path; safe to drop if unwanted.
+- **Repaired two non-UTF-8 files** — `supabase/MIGRATIONS.md` (7× `0x97`) and
+  `005_invites_user_properties_notifications_fix.sql` (5× `0x9d`), both mangled em-dashes. All five
+  changes in `005` are inside `--` comments; no executable SQL touched.
+
 ### 2026-08-18 — Brain: site, iPad demo, TestFlight, RLS advisor
 
 - Marketing site **https://relaxlivingvalet.com** is live (not the Flutter app).
