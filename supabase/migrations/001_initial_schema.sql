@@ -288,7 +288,13 @@ CREATE TABLE public.contractor_payouts (
 -- Audit logs for admin actions
 CREATE TABLE public.audit_logs (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    -- FIXED 2026-08-19: was NOT NULL. audit_trigger() derives the actor from
+    -- auth.uid(), which is NULL for system-initiated changes (seed scripts,
+    -- migrations, admin SQL in the dashboard). With NOT NULL, the trigger's own
+    -- insert failed with 23502 and took the originating statement down with it —
+    -- meaning no row could be inserted into any audited table except by a
+    -- logged-in app user. NULL here means "system action".
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     action TEXT NOT NULL,
     table_name TEXT,
     record_id UUID,
@@ -355,11 +361,31 @@ CREATE TRIGGER handle_payout_accounts_updated_at BEFORE UPDATE ON public.payout_
 -- Create audit trigger function
 CREATE OR REPLACE FUNCTION public.audit_trigger()
 RETURNS TRIGGER AS $$
+DECLARE
+    -- FIXED 2026-08-19: the INSERT branch previously read
+    --     COALESCE(NEW.created_by, NEW.user_id, NEW.worker_user_id, NEW.resident_user_id, auth.uid())
+    -- PL/pgSQL resolves every NEW.<field> at runtime, so referencing a column the
+    -- table does not have raises `42703: record "new" has no field "created_by"` —
+    -- COALESCE does not protect against it. NO audited table has created_by, so this
+    -- broke EVERY insert into properties, buildings, units, resident_units,
+    -- worker_assignments, violations and subscriptions.
+    -- Going through to_jsonb() yields NULL for absent keys instead of erroring,
+    -- preserving the original precedence.
+    rec_new jsonb;
+    actor uuid;
 BEGIN
     IF TG_OP = 'INSERT' THEN
+        rec_new := to_jsonb(NEW);
+        actor := COALESCE(
+            NULLIF(rec_new->>'created_by', '')::uuid,
+            NULLIF(rec_new->>'user_id', '')::uuid,
+            NULLIF(rec_new->>'worker_user_id', '')::uuid,
+            NULLIF(rec_new->>'resident_user_id', '')::uuid,
+            auth.uid()
+        );
         INSERT INTO public.audit_logs (user_id, action, table_name, record_id, new_values)
         VALUES (
-            COALESCE(NEW.created_by, NEW.user_id, NEW.worker_user_id, NEW.resident_user_id, auth.uid()),
+            actor,
             'INSERT',
             TG_TABLE_NAME,
             NEW.id,
