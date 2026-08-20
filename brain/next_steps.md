@@ -38,6 +38,26 @@ Probed every role against the live API and ran the app. Migrations `026`–`029`
   and never sent one to Apple, so it could not have worked even once configured.
 - **`ResidentServiceCalendarScreen` wired in** (service windows + holiday schedule).
 
+### Static mockups — audited 2026-08-20
+
+Every screen was checked for a data layer. **`resident_service_calendar_screen` was
+the only static mockup left**, and it was showing wrong information:
+
+- Hardcoded `6:00 PM - 10:00 PM` for everyone. Oakwood Heights runs **17:30-21:30**,
+  so those residents were told the wrong time for their own pickup. Now reads
+  `properties.service_window_start/end` for the resident's own property and labels it
+  with the property name.
+- Floating federal holidays pinned to fixed dates — MLK Jan 15, Memorial May 27,
+  Labor Sep 2, Thanksgiving Nov 28. All four were wrong. The running app marked
+  **Sep 2 2026, a Wednesday, as Labor Day** (real date: Sep 7). Now computed.
+- `weekday <= 4` excluded Sunday while the legend said "Sunday - Thursday".
+
+Covered by 14 tests (OPM-verified holiday dates for 2026-2028, all seven weekdays,
+time formatting incl. Oakwood's 17:30).
+
+Everything else queries Supabase. `simple_auth_screen` and `change_password_screen`
+have no table queries because they use the auth API — that is correct, not a mockup.
+
 ### Dead code — removed 2026-08-20
 
 All five unimported screens deleted (2,051 lines). Every screen in `lib/` is now
