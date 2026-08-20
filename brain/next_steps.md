@@ -13,6 +13,43 @@ private `violations` storage bucket, auth URLs + password policy configured.
 findings — including a confirmed data leak in `audit_logs` and a Stripe webhook bug that would
 have charged customers without delivering credits. Full detail: `supabase/MIGRATIONS.md`.
 
+### Stress-test findings (2026-08-20) — all fixed and verified
+
+Probed every role against the live API and ran the app. Migrations `026`–`029`.
+
+| Severity | Finding |
+|---|---|
+| **HIGH** | Residents could `PATCH purchased_comeback_balance = 9999` — unlimited paid comebacks, Stripe bypassed |
+| **HIGH** | Residents could `PATCH property_id` and relocate to another property, gaining read access to it |
+| **HIGH** | **Every photo upload was silently rejected** (403). Pickup proof, stop completion and missed-pickup photos all looked saved and never were |
+| **HIGH** | **Workers could never file a violation** — the resident lookup had no policy for the driver role, so the screen always bailed |
+| **HIGH** | **The PM dashboard was blind** on 10 tables — the app assigns PMs via `user_properties`, the policies checked `company_id` |
+| **MED** | `ViolationReportScreen` and `ResidentReportMissedPickupScreen` were fully built but unreachable |
+| **MED** | Owner Financials cards overflowed at every viewport, clipping the labor subtitles |
+| **LOW** | `simple_auth_screen_test` had been red against main |
+
+### Known gaps — features built but with no entry point
+
+These are complete screens that still need a home in the navigation. Not broken, just
+unreachable, so they are invisible to users:
+
+- [ ] `resident_service_calendar_screen.dart` — resident service calendar
+- [ ] `manager_alerts_screen.dart` — PM alerts
+- [ ] `manager_property_services_screen.dart` — PM property services
+
+Superseded and safe to delete when convenient: `resident_services_screen.dart` and
+`resident_extra_services_screen.dart` (both "coming soon" stubs, replaced by the inline
+Extra Services tab) and `property_manager_dashboard_screen.dart` (replaced by
+`property_manager_dashboard_new.dart`).
+
+Other cleanup worth doing:
+- [ ] **41 empty `catch (_) {}` blocks** across the dashboards. Two of them hid the
+      storage failures above for months. Worth auditing the rest — each one is a
+      failure the user never sees.
+- [ ] Apple / Google sign-in buttons are on the login screen but no OAuth provider is
+      configured in Supabase, so both will fail if tapped. Either configure them or
+      hide the buttons.
+
 ### Remaining — owner action only (I can't do these)
 
 - [ ] **Set the Stripe secrets** on the new project: `STRIPE_SECRET_KEY`,
