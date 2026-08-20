@@ -9,6 +9,8 @@ import '../../../core/platform/geo_helper_stub.dart'
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/storage/photo_storage.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/glow_badge.dart';
@@ -17,6 +19,7 @@ import '../../../core/widgets/role_bottom_nav.dart';
 import '../../../core/widgets/skeleton_card.dart';
 import '../../auth/screens/change_password_screen.dart';
 import '../../../core/utils/page_transitions.dart';
+import 'violation_report_screen.dart';
 import 'worker_earnings_screen.dart';
 import 'worker_route_map_screen.dart';
 
@@ -468,15 +471,16 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                 setSheetState(() => uploading = true);
                                 if (photoBytes != null && photoName != null) {
                                   try {
-                                    final uid = Supabase
-                                        .instance.client.auth.currentUser?.id;
-                                    final ext = photoName!.split('.').last;
-                                    final path =
-                                        'pickup_proofs/$uid/${DateTime.now().millisecondsSinceEpoch}.$ext';
-                                    await Supabase.instance.client.storage
-                                        .from('violations')
-                                        .uploadBinary(path, photoBytes!);
-                                  } catch (_) {}
+                                    await PhotoStorage.uploadWorkerPhoto(
+                                      photoBytes!,
+                                      kind: 'pickup_proofs',
+                                      ext: photoName!.split('.').last,
+                                    );
+                                  } catch (e) {
+                                    // Surface it: this used to fail silently on
+                                    // every upload (wrong bucket prefix -> 403).
+                                    _snack('Photo upload failed - saving without it');
+                                  }
                                 }
                                 if (ctx.mounted) Navigator.pop(ctx);
                                 _completeComebackRequest(index);
@@ -1380,14 +1384,10 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     try {
       final bytes = await image.readAsBytes();
       final stopId = stop['id'] as String;
-      final path = 'stops/${stopId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage
-          .from('pickup-photos')
-          .uploadBinary(path, bytes);
-      final url = Supabase.instance.client.storage
-          .from('pickup-photos')
-          .getPublicUrl(path);
-      await _completeStop(stopId, photoUrl: url, method: 'photo');
+      // Was bucket 'pickup-photos', which does not exist, with getPublicUrl() on
+      // what is a private bucket. Store the path; sign it on read.
+      final path = await PhotoStorage.uploadWorkerPhoto(bytes, kind: 'stops');
+      await _completeStop(stopId, photoUrl: path, method: 'photo');
       _advanceStop();
     } catch (e) {
       _snack('Photo upload failed — try again');
@@ -1633,6 +1633,40 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
+              // Violation reporting is a core part of the service (bag rules,
+              // prohibited items). ViolationReportScreen was fully built but had
+              // no entry point anywhere in the app, so no worker could ever file one.
+              BentoCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.report_problem_outlined,
+                        color: AppColors.warning, size: 20),
+                  ),
+                  title: Text('Report a Violation',
+                      style: GoogleFonts.inter(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600)),
+                  subtitle: Text('Bag rules, prohibited items, photo evidence',
+                      style: GoogleFonts.inter(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right,
+                      color: AppColors.textSecondary, size: 20),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(
+                          builder: (_) => const ViolationReportScreen())),
+                ),
+              ),
+              const SizedBox(height: 10),
               BentoCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
