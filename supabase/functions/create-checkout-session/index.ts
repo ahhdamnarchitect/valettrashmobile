@@ -91,7 +91,10 @@ serve(async (req) => {
     productName = `Comeback pack (${pack.label})`;
   }
 
-  const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+  const stripe = new Stripe(stripeSecret, {
+    apiVersion: "2023-10-16",
+    httpClient: Stripe.createFetchHttpClient(), // Deno: use fetch, not node http
+  });
 
   let requestId: string | null = null;
   if (kind === "comeback") {
