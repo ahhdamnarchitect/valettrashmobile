@@ -13,10 +13,13 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Existing
-  flutter_dotenv: ^5.1.0
   image_picker: ^1.0.10
-  supabase_flutter: ^1.10.25
-  sign_in_with_apple: ^5.0.0
+  supabase_flutter: ^2.8.0
+  sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.3
+  share_plus: ^7.2.2
+  geolocator: ^10.1.1
+  path_provider: ^2.1.5
   google_sign_in: ^6.2.2
 
   # Design System
@@ -42,6 +45,8 @@ dependencies:
   url_launcher: ^6.3.1
 
 dev_dependencies:
+  integration_test:
+    sdk: flutter
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
@@ -75,7 +80,7 @@ flutter_native_splash:
 flutter:
   uses-material-design: true
   assets:
-    - .env
     - assets/lottie/
     - assets/rive/
     - assets/icon/
+

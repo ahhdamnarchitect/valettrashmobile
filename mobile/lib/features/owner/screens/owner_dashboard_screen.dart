@@ -22,6 +22,7 @@ import '../../shared/screens/service_requests_inbox_screen.dart';
 import '../../worker/screens/worker_dashboard_screen.dart';
 import 'owner_workforce_screen.dart';
 import '../widgets/owner_admin_switch_bar.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -206,7 +207,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             mrrByProp[pid] =
                 (mrrByProp[pid] ?? 0) + ((s['monthly_fee'] as num?)?.toDouble() ?? 0);
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
 
         try {
           final inv = await client
@@ -220,7 +223,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             invoicesByProp[pid] =
                 (invoicesByProp[pid] ?? 0) + ((i['amount'] as num?)?.toDouble() ?? 0);
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
 
         try {
           final paidCb = await client
@@ -235,7 +240,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             final cents = (r['payment_amount_cents'] as num?)?.toDouble() ?? 0;
             comebacksByProp[pid] = (comebacksByProp[pid] ?? 0) + cents / 100;
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
 
         for (final p in properties) {
           final pid = p['id']?.toString() ?? '';
@@ -286,7 +293,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             payoutSum += (row['amount'] as num?)?.toDouble() ?? 0;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+      }
 
       double laborWeekH = 0;
       double laborWeekC = 0;
@@ -327,7 +336,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             laborMonthC += ClockHours.laborCost(hours: mh, hourlyRate: rate);
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+      }
 
       properties.sort(
           (a, b) => (a['name'] as String).compareTo(b['name'] as String));
@@ -343,7 +354,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               .select('id')
               .eq('status', 'completed');
           completedCb = (cbRows as List).length;
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
         try {
           final ratings = await client
               .from('satisfaction_ratings')
@@ -355,7 +368,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 0, (acc, r) => acc + (r['rating'] as int? ?? 0).toDouble());
             avgRating = sum / ratingList.length;
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+        }
       }
 
       // Month-over-month: last month's comebacks and satisfaction
@@ -389,7 +404,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             lastMonthRating = sum / ratingList2.length;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_dashboard_screen.operation', e);
+      }
 
       setState(() {
         _properties = properties;
@@ -1372,7 +1389,16 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  void _exportFinancialsCsv() {
+
+  /// Anchor rect for the iOS share popover. Required on iPad -- share_plus throws
+  /// `sharePositionOrigin: argument must be set` without it.
+  Rect? _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
+  Future<void> _exportFinancialsCsv() async {
     final buf = StringBuffer();
     buf.writeln(
       'Property,Total Units,Occupied,Billable Doors,Occupancy %,Fee Per Door,Contract Monthly,Resident MRR,Paid Invoices,Paid Comebacks,Total Revenue,Revenue Per Billable Door',
@@ -1385,7 +1411,18 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         '${p['paid_comebacks']},${p['total_property_revenue']},${p['revenue_per_door']}',
       );
     }
-    downloadCsv(buf.toString(), 'owner_financials_by_property.csv');
+    try {
+      await downloadCsv(
+buf.toString(), 'owner_financials_by_property.csv',
+            sharePositionOrigin: _shareOrigin());
+    } catch (e) {
+      // Native export writes a file and opens the share sheet; on web it
+      // triggers a download. Either can fail, and this used to be a plain
+      // fire-and-forget call, so a failure showed the user nothing.
+      ErrorReporter.showError(mounted ? context : null,
+          'Could not export the financials - please try again',
+          error: e, logContext: 'csv export: financials');
+    }
   }
 
   // ── More tab ──────────────────────────────────────────────────────────────────

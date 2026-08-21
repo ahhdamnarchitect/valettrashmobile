@@ -50,9 +50,9 @@ Admin Portal (`AdminDashboardScreen`) is **not** a separate login — open from 
 | Item | Value |
 |---|---|
 | Project | relaxedl-living |
-| Ref | `airpwzzkyjqzeeqizvft` |
+| Ref | `immiejqvnucndjspacwv` |
 | Region | AWS us-east-2 |
-| Dashboard | https://supabase.com/dashboard/project/airpwzzkyjqzeeqizvft |
+| Dashboard | https://supabase.com/dashboard/project/immiejqvnucndjspacwv |
 
 Env (local): `mobile/.env` with `SUPABASE_URL` + `SUPABASE_ANON_KEY` (see `mobile/.env.example`).
 

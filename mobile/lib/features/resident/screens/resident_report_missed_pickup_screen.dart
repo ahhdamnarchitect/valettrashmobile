@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/storage/photo_storage.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/lottie_feedback.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class ResidentReportMissedPickupScreen extends StatefulWidget {
   const ResidentReportMissedPickupScreen({super.key});
@@ -44,7 +47,9 @@ class _ResidentReportMissedPickupScreenState
         _photoBytes = bytes;
         _photoName = file.name;
       });
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('resident_report_missed_pickup_screen._pickPhoto', e);
+    }
   }
 
   Future<void> _submit() async {
@@ -59,17 +64,18 @@ class _ResidentReportMissedPickupScreenState
       // Upload photo if selected
       if (_photoBytes != null && _photoName != null) {
         try {
-          final ext = _photoName!.split('.').last;
-          final path =
-              'missed_pickups/$uid/${DateTime.now().millisecondsSinceEpoch}.$ext';
-          await client.storage
-              .from('violations')
-              .uploadBinary(path, _photoBytes!);
-          final url =
-              client.storage.from('violations').getPublicUrl(path);
-          photoUrl = url;
-        } catch (_) {
-          // Storage upload failed — continue without photo
+          // Was 'missed_pickups/<uid>/', which matches no storage policy, so every
+          // upload 403'd and the empty catch hid it. Store the path; sign on read.
+          photoUrl = await PhotoStorage.uploadResidentPhoto(
+            _photoBytes!,
+            kind: 'missed_pickups',
+            ext: _photoName!.split('.').last,
+          );
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Photo upload failed - report sent without it')));
+          }
         }
       }
 
@@ -102,7 +108,9 @@ class _ResidentReportMissedPickupScreenState
             pickupId = pickup?['id']?.toString();
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('resident_report_missed_pickup_screen._submit', e);
+      }
 
       // Build insert data — include notes and photo_url only if columns exist
       final insertData = <String, dynamic>{

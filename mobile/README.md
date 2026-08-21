@@ -6,17 +6,35 @@ Flutter app for the full valet trash operation. Six role-based dashboards — re
 
 ## Quick Start
 
-**Prerequisites:** Flutter 3.41.9, `.env` file in this directory (already committed — contains Supabase anon key).
+**Prerequisites:** Flutter 3.44.9 and a `dart_define.json` in this directory.
 
-```powershell
+Config is **no longer read from a bundled `.env`** — it is baked in at compile time via
+`--dart-define-from-file`. First-time setup:
+
+```bash
 cd mobile
+cp dart_define.example.json dart_define.json   # then fill in the values
 flutter pub get
-flutter run -d chrome --no-pub
+```
+
+Fill `dart_define.json` from **Supabase Dashboard → Settings → API**. It is gitignored, so each
+person keeps their own; `dart_define.example.json` is the committed template.
+
+```bash
+flutter run --dart-define-from-file=dart_define.json -d chrome
 # or on a fixed port:
-flutter run -d web-server --web-port 8091 --no-pub
+flutter run --dart-define-from-file=dart_define.json -d web-server --web-port 8091
 ```
 
 App opens at `http://localhost:8091`.
+
+> **Every** `flutter run` / `flutter build` needs `--dart-define-from-file=dart_define.json`.
+> Without it the app throws a readable `StateError` at startup naming the missing keys
+> (see `lib/core/config/app_config.dart`) rather than failing deep inside Supabase.
+
+> ⚠️ **Run `flutter clean` before a deploy build.** Builds from before this change left a stale
+> `build/web/assets/.env` on disk containing the *old* project's key. `flutter build` does not
+> clear the output directory, so deploying an uncleaned `build/web/` would publish it.
 
 ---
 
@@ -168,7 +186,7 @@ iOS project is fully configured — bundle ID `com.relaxedliving.valet`, privacy
 
 Currently pointed at `localhost:8091` — update before going live:
 
-1. [Supabase Dashboard](https://supabase.com/dashboard/project/airpwzzkyjqzeeqizvft) → Auth → URL Configuration
+1. [Supabase Dashboard](https://supabase.com/dashboard/project/immiejqvnucndjspacwv) → Auth → URL Configuration
 2. **Site URL** → your production domain
 3. **Redirect URLs** → add production domain + keep `com.relaxedliving.valet://login-callback`
 4. Auth → SMTP Settings → enable Resend or SendGrid (email confirmation is disabled in dev)
@@ -205,9 +223,9 @@ Currently pointed at `localhost:8091` — update before going live:
 | Item | Value |
 |---|---|
 | Project name | relaxed-living |
-| Project ref | `airpwzzkyjqzeeqizvft` |
+| Project ref | `immiejqvnucndjspacwv` |
 | Region | AWS us-east-2 |
-| Dashboard | https://supabase.com/dashboard/project/airpwzzkyjqzeeqizvft |
+| Dashboard | https://supabase.com/dashboard/project/immiejqvnucndjspacwv |
 
 To access the dashboard (database, auth users, storage, logs): ask to be added as a project member or have ownership transferred to your Supabase account.
 

@@ -23,7 +23,7 @@ Dashboard → Developers → API keys:
 
 ## 3. Set Edge Function secrets
 
-Supabase Dashboard → Project **airpwzzkyjqzeeqizvft** → Edge Functions → Secrets:
+Supabase Dashboard → Project **immiejqvnucndjspacwv** → Edge Functions → Secrets:
 
 | Name | Value |
 |---|---|
@@ -57,7 +57,7 @@ Redeploy after changing function code. Secrets can be set without a redeploy.
 Stripe Dashboard → Developers → Webhooks → Add endpoint:
 
 ```
-https://airpwzzkyjqzeeqizvft.supabase.co/functions/v1/stripe-webhook
+https://immiejqvnucndjspacwv.supabase.co/functions/v1/stripe-webhook
 ```
 
 Events to send:

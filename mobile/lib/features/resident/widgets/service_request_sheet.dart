@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/lottie_feedback.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/error_reporter.dart';
 
 const kServiceTypes = [
   'Moving Service',
@@ -166,7 +167,9 @@ class _ServiceRequestSheetState extends State<_ServiceRequestSheet> {
               .eq('is_active', true)
               .maybeSingle();
           propertyId = unitRow?['property_id']?.toString();
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('service_request_sheet._submit', e);
+        }
       }
 
       final payload = <String, dynamic>{

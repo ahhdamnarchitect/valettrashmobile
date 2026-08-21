@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/stat_tile.dart';
 import '../../../core/workforce/clock_hours.dart';
+import '../../../core/utils/error_reporter.dart';
 
 /// Owner: labor cost from clock hours × hourly rate; edit driver pay rates.
 class OwnerWorkforceScreen extends StatefulWidget {
@@ -73,7 +74,9 @@ class _OwnerWorkforceScreenState extends State<OwnerWorkforceScreen> {
             .gte('created_at', since)
             .order('created_at', ascending: false);
         payouts = List<Map<String, dynamic>>.from(payoutRows as List);
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('owner_workforce_screen._load', e);
+      }
 
       if (!mounted) return;
       setState(() {

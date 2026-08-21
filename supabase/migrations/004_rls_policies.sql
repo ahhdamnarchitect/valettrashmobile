@@ -29,18 +29,44 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON public.users
     FOR SELECT USING (auth.uid() = id);
 
--- Users can update their own profile (except role)
+-- Users can update their own profile (except role).
+--
+-- FIXED 2026-08-19: this policy previously read
+--     FOR UPDATE USING (auth.uid() = id AND role = OLD.role)
+-- but OLD is only valid inside a trigger function, never in an RLS policy.
+-- Postgres rejects it with `42P01: missing FROM-clause entry for table "old"`,
+-- which aborted this entire migration — which is why RLS was never actually
+-- enabled on the core tables. The helper below reads the caller's *stored* role
+-- via SECURITY DEFINER (so it bypasses RLS and cannot recurse), and the
+-- WITH CHECK compares the incoming row against it: you may update your own
+-- profile, but you may not change your own role. Same pattern as
+-- public.is_owner_admin() in 014_launch_rls_hardening.sql.
+CREATE OR REPLACE FUNCTION public.current_user_role()
+RETURNS public.user_role
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $fn$
+    SELECT role FROM public.users WHERE id = auth.uid()
+$fn$;
+
 CREATE POLICY "Users can update own profile" ON public.users
-    FOR UPDATE USING (auth.uid() = id AND role = OLD.role);
+    FOR UPDATE
+    USING (auth.uid() = id)
+    WITH CHECK (auth.uid() = id AND role = public.current_user_role());
 
 -- Super admins can do everything
+-- FIXED 2026-08-19: this policy is ON public.users and its USING clause did
+-- `SELECT 1 FROM public.users`, which makes Postgres re-evaluate the same policy
+-- to answer itself -> `42P17: infinite recursion detected in policy for relation
+-- "users"`. Every anon/authenticated read that touched users returned HTTP 500,
+-- including indirectly (a policy on another table that joins users). Routed
+-- through the SECURITY DEFINER helper above, which bypasses RLS and cannot recurse.
+-- Semantics are unchanged (super_admin only); 014 layers the owner tier on top
+-- via public.is_owner_admin().
 CREATE POLICY "Super admins can manage all users" ON public.users
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE id = auth.uid() AND role = 'super_admin'
-        )
-    );
+    FOR ALL USING (public.current_user_role() = 'super_admin');
 
 -- Properties table policies
 -- Super admins can see all properties

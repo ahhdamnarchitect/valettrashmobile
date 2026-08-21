@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/lottie_feedback.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/error_reporter.dart';
 
 const _subjects = [
   'General Question',
@@ -92,7 +93,9 @@ class _ResidentSupportPanelState extends State<ResidentSupportPanel> {
             .eq('is_active', true)
             .maybeSingle();
         propertyId = unitRow?['property_id']?.toString();
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('resident_concerns_screen._submit', e);
+      }
 
       await client.from('resident_concerns').insert({
         'resident_user_id': uid,

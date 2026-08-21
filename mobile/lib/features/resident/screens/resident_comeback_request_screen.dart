@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/lottie_feedback.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../models/comeback_pricing.dart';
+import '../../../core/utils/error_reporter.dart';
 
 enum _ComebackCharge { freeMonthly, freePurchased, paidSingle }
 
@@ -101,7 +102,9 @@ class _ResidentComebackRequestScreenState
             pickupId = pickup?['id']?.toString();
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('resident_comeback_request_screen._submit', e);
+      }
 
       final now = DateTime.now();
       final insertData = <String, dynamic>{

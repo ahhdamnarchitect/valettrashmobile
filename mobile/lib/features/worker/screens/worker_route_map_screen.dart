@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/skeleton_card.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class WorkerRouteMapScreen extends StatefulWidget {
   final String propertyName;
@@ -68,8 +69,9 @@ class _WorkerRouteMapScreenState extends State<WorkerRouteMapScreen> {
             }
           }
         }
-      } catch (_) {
+      } catch (e) {
         // latitude/longitude columns may not exist yet — that's OK
+        ErrorReporter.logSilent('worker_route_map_screen._loadData', e);
       }
 
       // Load route stops
@@ -91,7 +93,9 @@ class _WorkerRouteMapScreenState extends State<WorkerRouteMapScreen> {
         _completedStops =
             _routeStops.where((s) => s['completed'] == true).length;
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('worker_route_map_screen._loadData', e);
+    }
 
     if (mounted) setState(() => _loading = false);
   }

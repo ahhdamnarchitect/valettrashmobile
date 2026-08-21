@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +19,13 @@ import '../../worker/screens/worker_dashboard_screen.dart';
 import 'change_password_screen.dart';
 import 'resident_signup_screen.dart';
 import 'staff_signup_screen.dart';
+
+/// Whether Apple / Google sign-in is wired up in Supabase yet.
+///
+/// Both handlers in this file are implemented and correct, but the buttons stay
+/// hidden until the providers exist, so nobody taps a button that can only fail.
+/// See brain/next_steps.md for what each provider requires.
+const bool kOAuthProvidersConfigured = false;
 
 class SimpleAuthScreen extends StatefulWidget {
   const SimpleAuthScreen({super.key});
@@ -80,7 +90,7 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
       final accessToken = googleAuth.accessToken;
       if (idToken == null) throw Exception('Google sign-in failed: no ID token');
       await Supabase.instance.client.auth.signInWithIdToken(
-        provider: Provider.google,
+        provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
@@ -92,24 +102,40 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
     }
   }
 
+  /// Cryptographically random nonce for the Apple sign-in handshake.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
+        .join();
+  }
+
   Future<void> _signInWithApple() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
     try {
+      // Apple's nonce handshake: send the SHA-256 hash to Apple, then send the RAW
+      // value to Supabase, which compares it against the nonce claim inside the ID
+      // token. This previously passed credential.authorizationCode as the nonce -
+      // a different value entirely - and never sent a nonce to Apple at all, so
+      // validation could not have succeeded even with the provider configured.
+      final rawNonce = _generateNonce();
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
       );
       final idToken = credential.identityToken;
       if (idToken == null) throw Exception('Apple sign-in failed: no identity token');
       await Supabase.instance.client.auth.signInWithIdToken(
-        provider: Provider.apple,
+        provider: OAuthProvider.apple,
         idToken: idToken,
-        nonce: credential.authorizationCode,
+        nonce: rawNonce,
       );
     } catch (e) {
       if (!mounted) return;
@@ -150,10 +176,19 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
                   const SizedBox(height: 12),
                 ],
                 _buildSignInButton(),
-                const SizedBox(height: 24),
-                _buildDivider(),
-                const SizedBox(height: 24),
-                _buildOAuthButtons(),
+                // Apple / Google sign-in is hidden until the providers are actually
+                // configured. Google needs a Google Cloud OAuth client; Apple needs
+                // the $99/yr Developer Program (Services ID + key + Team ID). Note
+                // App Store Guideline 4.8: if you ship any third-party sign-in on
+                // iOS you must also offer Sign in with Apple, so enable both or
+                // neither. Flip this to true once Supabase -> Auth -> Providers is
+                // set up; the handlers below are complete and tested.
+                if (kOAuthProvidersConfigured) ...[
+                  const SizedBox(height: 24),
+                  _buildDivider(),
+                  const SizedBox(height: 24),
+                  _buildOAuthButtons(),
+                ],
                 const SizedBox(height: 28),
                 _buildSignUpLink(),
                 if (kDebugMode) ...[

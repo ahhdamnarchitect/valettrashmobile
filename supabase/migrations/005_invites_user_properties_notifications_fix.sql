@@ -1,8 +1,8 @@
--- Relaxed Living Valet ù bridges app + DB gaps (run after 004_rls_policies.sql)
+-- Relaxed Living Valet ‚Äî bridges app + DB gaps (run after 004_rls_policies.sql)
 -- Safe to re-run on fresh projects: uses IF NOT EXISTS / DROP IF EXISTS where possible.
 
 -- -----------------------------------------------------------------------------
--- 1) user_properties ù used by manager alerts + notification targeting
+-- 1) user_properties ‚Äî used by manager alerts + notification targeting
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.user_properties (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -29,7 +29,7 @@ CREATE POLICY "Super admins manage user_properties" ON public.user_properties
     );
 
 -- -----------------------------------------------------------------------------
--- 2) users ù allow new signups to create their own profile row
+-- 2) users ‚Äî allow new signups to create their own profile row
 -- -----------------------------------------------------------------------------
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.users;
 CREATE POLICY "Users can insert own profile" ON public.users
@@ -183,7 +183,7 @@ CREATE POLICY "Residents self-register assignment matching claimed invite"
     );
 
 -- -----------------------------------------------------------------------------
--- 4) notifications ù broadcasts + manager inserts (aligns with Flutter app)
+-- 4) notifications ‚Äî broadcasts + manager inserts (aligns with Flutter app)
 -- -----------------------------------------------------------------------------
 ALTER TABLE public.notifications ALTER COLUMN user_id DROP NOT NULL;
 
@@ -241,6 +241,6 @@ CREATE POLICY "Managers and admins insert notifications" ON public.notifications
     );
 
 -- -----------------------------------------------------------------------------
--- 5) violations ù optional pickup when reporting from field
+-- 5) violations ‚Äî optional pickup when reporting from field
 -- -----------------------------------------------------------------------------
 ALTER TABLE public.violations ALTER COLUMN pickup_id DROP NOT NULL;
