@@ -38,22 +38,52 @@ Probed every role against the live API and ran the app. Migrations `026`–`029`
   and never sent one to Apple, so it could not have worked even once configured.
 - **`ResidentServiceCalendarScreen` wired in** (service windows + holiday schedule).
 
-### Native-platform gaps (web works, mobile does not)
+### Native-platform gaps — implemented 2026-08-20, device verification BLOCKED
 
-Two features are implemented for web only, via conditional imports. The app ships to
-iOS/Android, so these matter.
+- [x] **CSV export** — native stub was `// No-op`; now writes a temp file and opens the
+      share sheet (`share_plus`).
+- [x] **Worker GPS** — native stub returned `null` unconditionally; now implemented
+      with `geolocator` (service check, permission request, 10s high-accuracy fix).
+      No platform config was needed: `NSLocationWhenInUseUsageDescription` and the
+      Android `ACCESS_FINE/COARSE_LOCATION` entries were already present with
+      App Store-ready usage strings.
 
-- [x] **CSV export** — the native stub was `// No-op`, so all three Export CSV buttons
-      did nothing on mobile. **Fixed 2026-08-20**: writes a temp file and opens the
-      share sheet (`share_plus`). ⚠️ Compile-checked only — no device in this
-      environment. **Exercise it on the first TestFlight build.**
-- [ ] **Worker GPS / location sharing** — `geo_helper_stub` returns `null` on native,
-      so "Share location" shows *"Location unavailable on this platform"*. It is
-      honest, but the feature does not work for a worker in the field, which is the
-      whole point of it. Needs the `geolocator` package plus the iOS/Android location
-      permission entries in `Info.plist` / `AndroidManifest.xml`. **This is a real
-      pre-launch item, not a nice-to-have** — the OM live map has nothing to plot
-      until it is done.
+⚠️ **Both are compile-verified only. Neither has run on a device**, and that is
+blocked in this environment, not merely skipped:
+
+```
+flutter build ios  ->  "CocoaPods not installed or not in valid state."
+gem install cocoapods -> ffi requires Ruby >= 3.0; macOS ships Ruby 2.6.10
+```
+
+Xcode 26.6 works and simulators exist (iPhone 17 Pro, iPad Pro M5, …). The only
+missing piece is CocoaPods, which cannot be installed on the system Ruby. **To
+unblock, one of:**
+
+```bash
+# Option A - Homebrew (recommended; installs its own Ruby)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install cocoapods
+
+# Option B - a modern Ruby, then the gem
+brew install ruby        # or rbenv install 3.3.x
+gem install cocoapods
+```
+
+Then `flutter build ios --simulator` and exercise: worker **Share location**, and
+**Export CSV** on the owner Financials and PM Compliance screens.
+
+Note: Flutter now uses Swift Package Manager for most plugins. Only `app_links`,
+`rive_common`, `share_plus` and `sign_in_with_apple` still need CocoaPods — three of
+those four predate this work.
+
+### GitHub integration — NOT a defect (corrected 2026-08-20)
+
+Earlier notes said it "still points at the old project". Checked the dashboard:
+**the new project has no GitHub integration connected at all.** Migrations were
+applied manually via `supabase/provision/`, so nothing is deploying to the wrong
+database. Connecting it is an optional convenience and needs a GitHub OAuth grant,
+which is the owner's to give.
 
 ### Static mockups — audited 2026-08-20
 
