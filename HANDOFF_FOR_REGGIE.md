@@ -186,9 +186,11 @@ Anything that misbehaves — screenshot it and send it to Adam.
 
 ## Two smaller things (ask Adam, 5 minutes)
 
-- **Re-link GitHub to the new database.** Right now, database updates still point at
-  the *old* Supabase project. Until this is changed, new changes won't reach the live
-  app.
+- **Do NOT connect GitHub to the database yet.** This was on an earlier version of
+  this list and it was wrong — connecting it now would break things. The database
+  already has everything it needs; the connection is a convenience for *future*
+  updates, and setting it up safely takes real work (renaming 36 files and telling
+  Supabase what's already been applied). Adam has written down why. Leave it alone.
 - **The old Supabase project has security holes** that were fixed in the new one. If
   you're not using it any more, delete it. If you are, tell Adam so he can patch it.
 
