@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/skeleton_card.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class PmComplianceReportScreen extends StatefulWidget {
   final String propertyId;
@@ -65,7 +66,7 @@ class _PmComplianceReportScreenState extends State<PmComplianceReportScreen> {
     return '${(_completed / _runs.length * 100).toStringAsFixed(0)}%';
   }
 
-  void _exportCsv() {
+  Future<void> _exportCsv() async {
     final buf = StringBuffer();
     buf.writeln('Date,Status,Started,Completed');
     for (final r in _runs) {
@@ -79,7 +80,16 @@ class _PmComplianceReportScreenState extends State<PmComplianceReportScreen> {
     }
     final filename =
         '${widget.propertyName.replaceAll(' ', '_')}_compliance_${_fmtDate(DateTime.now().toIso8601String())}.csv';
-    downloadCsv(buf.toString(), filename);
+    try {
+      await downloadCsv(buf.toString(), filename);
+    } catch (e) {
+      // Native export writes a file and opens the share sheet; on web it
+      // triggers a download. Either can fail, and this used to be a plain
+      // fire-and-forget call, so a failure showed the user nothing.
+      ErrorReporter.showError(mounted ? context : null,
+          'Could not export the compliance report - please try again',
+          error: e, logContext: 'csv export: compliance report');
+    }
   }
 
   String _fmtDate(String iso) {

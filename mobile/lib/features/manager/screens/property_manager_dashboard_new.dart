@@ -411,7 +411,7 @@ class _PropertyManagerDashboardNewScreenState
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  void _exportUnitCodesCsv() {
+  Future<void> _exportUnitCodesCsv() async {
     final buf = StringBuffer();
     buf.writeln(
       'Property,Unit Number,Invite Code,Code Status,Resident,Signup Steps',
@@ -448,10 +448,19 @@ class _PropertyManagerDashboardNewScreenState
         ? (_properties.first['name']?.toString() ?? 'property')
             .replaceAll(RegExp(r'[^\w\-]+'), '_')
         : 'property';
-    downloadCsv(
-      buf.toString(),
-      '${safeName}_resident_invite_codes.csv',
-    );
+    try {
+      await downloadCsv(
+        buf.toString(),
+        '${safeName}_resident_invite_codes.csv',
+      );
+    } catch (e) {
+      // Native export writes a file and opens the share sheet; on web it
+      // triggers a download. Either can fail, and this used to be a plain
+      // fire-and-forget call, so a failure showed the user nothing.
+      ErrorReporter.showError(mounted ? context : null,
+          'Could not export the unit codes - please try again',
+          error: e, logContext: 'csv export: unit codes');
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('CSV downloaded — share with residents or your team'),

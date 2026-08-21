@@ -17,6 +17,8 @@ dependencies:
   supabase_flutter: ^1.10.25
   sign_in_with_apple: ^5.0.0
   crypto: ^3.0.3
+  share_plus: ^7.2.2
+  path_provider: ^2.1.5
   google_sign_in: ^6.2.2
 
   # Design System

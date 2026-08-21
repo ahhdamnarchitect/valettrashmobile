@@ -1389,7 +1389,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
-  void _exportFinancialsCsv() {
+  Future<void> _exportFinancialsCsv() async {
     final buf = StringBuffer();
     buf.writeln(
       'Property,Total Units,Occupied,Billable Doors,Occupancy %,Fee Per Door,Contract Monthly,Resident MRR,Paid Invoices,Paid Comebacks,Total Revenue,Revenue Per Billable Door',
@@ -1402,7 +1402,16 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         '${p['paid_comebacks']},${p['total_property_revenue']},${p['revenue_per_door']}',
       );
     }
-    downloadCsv(buf.toString(), 'owner_financials_by_property.csv');
+    try {
+      await downloadCsv(buf.toString(), 'owner_financials_by_property.csv');
+    } catch (e) {
+      // Native export writes a file and opens the share sheet; on web it
+      // triggers a download. Either can fail, and this used to be a plain
+      // fire-and-forget call, so a failure showed the user nothing.
+      ErrorReporter.showError(mounted ? context : null,
+          'Could not export the financials - please try again',
+          error: e, logContext: 'csv export: financials');
+    }
   }
 
   // ── More tab ──────────────────────────────────────────────────────────────────
