@@ -38,6 +38,23 @@ Probed every role against the live API and ran the app. Migrations `026`–`029`
   and never sent one to Apple, so it could not have worked even once configured.
 - **`ResidentServiceCalendarScreen` wired in** (service windows + holiday schedule).
 
+### Native-platform gaps (web works, mobile does not)
+
+Two features are implemented for web only, via conditional imports. The app ships to
+iOS/Android, so these matter.
+
+- [x] **CSV export** — the native stub was `// No-op`, so all three Export CSV buttons
+      did nothing on mobile. **Fixed 2026-08-20**: writes a temp file and opens the
+      share sheet (`share_plus`). ⚠️ Compile-checked only — no device in this
+      environment. **Exercise it on the first TestFlight build.**
+- [ ] **Worker GPS / location sharing** — `geo_helper_stub` returns `null` on native,
+      so "Share location" shows *"Location unavailable on this platform"*. It is
+      honest, but the feature does not work for a worker in the field, which is the
+      whole point of it. Needs the `geolocator` package plus the iOS/Android location
+      permission entries in `Info.plist` / `AndroidManifest.xml`. **This is a real
+      pre-launch item, not a nice-to-have** — the OM live map has nothing to plot
+      until it is done.
+
 ### Static mockups — audited 2026-08-20
 
 Every screen was checked for a data layer. **`resident_service_calendar_screen` was
