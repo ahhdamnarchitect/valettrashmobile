@@ -188,6 +188,20 @@ All attack probes still blocked. Advisor: **0 errors** on both Security and Perf
       on. Worth doing only with the row-count matrix as a regression harness, deliberately,
       not as a late-session tidy-up.
 
+### Self-verification — `./scripts/go-live-check.sh`
+
+Run it after supplying each credential; it reports PASS / FAIL / TODO per item and
+reads config from `mobile/dart_define.json` (nothing to set up).
+
+Current: **6 PASS, 0 FAIL, 5 TODO** — every TODO is an external dependency, not a
+defect. It specifically catches the silent Stripe misconfiguration where the webhook
+has JWT verification ON (Stripe calls it without a Supabase token, so it would fail
+in production with no obvious cause).
+
+Note: `/auth/v1/recover` returns **200**, so the password-reset path *is* wired.
+Earlier notes calling that flow "not exercised" were too broad — what is unverified is
+email **delivery** and the deep link opening the app, which needs SMTP.
+
 ### Remaining — owner action only### Remaining — owner action only (I can't do these)
 
 - [ ] **Set the Stripe secrets** on the new project: `STRIPE_SECRET_KEY`,
