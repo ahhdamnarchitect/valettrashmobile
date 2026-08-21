@@ -210,27 +210,27 @@ email **delivery** and the deep link opening the app, which needs SMTP.
       real Stripe account — see `brain/stripe_setup.md`.
 - [ ] **Point the Stripe webhook endpoint** at
       `https://immiejqvnucndjspacwv.supabase.co/functions/v1/stripe-webhook`.
-- [x] ~~Re-link the GitHub integration~~ — **investigated 2026-08-21, do NOT do this as-is.**
-      The earlier note was wrong on both counts:
+- [ ] 🔴 **Connect the GitHub integration — Reggie must do this, not Adam.**
+      Everything on the Supabase side is prepared; only the GitHub authorization is left.
 
-      1. The new project has **no** GitHub connection at all (the button reads *Connect
-         GitHub*, not *Reconnect*) — it was never pointed at the old project.
-      2. Connecting it now would be **actively harmful**. `supabase_migrations.schema_migrations`
-         **does not exist** on this project, because every migration was applied as raw SQL
-         through the editor rather than through the migration system. Supabase would therefore
-         see 36 migration files and zero applied, and try to run all of them against a database
-         that already has everything — failing on "already exists", and potentially half-applying
-         the `DROP POLICY`/`CREATE POLICY` pairs.
-      3. Separately, none of the 36 files use the `<14-digit timestamp>_name.sql` format the
-         integration expects. **0 of 36 match.**
+      **Why Reggie:** GitHub Apps install per-account, and `relaxedlivingvalet` is a
+      **personal user account**, not an org. Only the account holder can install an app
+      there — no collaborator permission level, including WRITE, grants that.
 
-      Doing it safely means renaming every migration to timestamp format *and* backfilling
-      `schema_migrations` with all 36 versions. That is real work with real risk, for a
-      convenience benefit, on a database that is already correct and verified.
+      **His steps** (~2 min): Supabase → Settings → Integrations → **Connect GitHub** →
+      choose `relaxedlivingvalet` → grant the **valettrashmobile** repo → back in
+      Supabase, select it and set production branch `main`.
 
-      The current workflow — apply SQL via the editor, keep the files in git, use
-      `supabase/provision/` for a fresh project — is what has actually been proven. Leave it.
-      If the integration is wanted later, it should be its own scoped task.
+      **Already done for him:**
+      - `supabase_migrations.schema_migrations` backfilled — **31 recorded**. Without this
+        Supabase would have re-run every migration against a database that already has
+        them.
+      - 7 "never run" legacy files moved to `migrations/_deprecated/`, outside the glob
+        the integration reads.
+      - All 31 migrations renamed to `<14-digit>_name.sql`, order preserved.
+      - The two enum migrations split out, so no file adds an enum value *and* uses it —
+        the integration runs one transaction per file, which would have failed.
+
 - [ ] **Configure custom SMTP** before public launch. The built-in mailer is capped at ~2–3
       emails/hour, so password reset is effectively unusable at scale. Once SMTP is in place you
       may want email confirmation back on — but that needs an app change first (see below).
