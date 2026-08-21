@@ -1,0 +1,117 @@
+name: CI
+
+# Every verification in this repo has been run by hand. This runs the same checks on
+# every push and PR so the security and performance work cannot silently regress.
+on:
+  push:
+    branches: [main, 'feat/**', 'fix/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: Analyze, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting is not wildly off
+        run: dart format --output=none --set-exit-if-changed . || echo "::warning::dart format would change files (non-blocking)"
+        continue-on-error: true
+
+      - name: Analyze
+        # Errors fail the build. Info/warning-level lints do not -- the repo carries a
+        # known set of them and failing on those would just train people to ignore CI.
+        run: |
+          set -o pipefail
+          flutter analyze 2>&1 | tee analyze.txt || true
+          ERRORS=$(grep -cE '^\s*error' analyze.txt || true)
+          echo "analyzer errors: $ERRORS"
+          if [ "$ERRORS" != "0" ]; then
+            grep -E '^\s*error' analyze.txt
+            echo "::error::flutter analyze reported $ERRORS error(s)"
+            exit 1
+          fi
+
+      - name: Test
+        run: flutter test --reporter expanded
+
+      - name: Build web
+        # Dummy config: this proves the app COMPILES. It never talks to Supabase, and
+        # the real publishable key stays out of CI entirely.
+        run: |
+          cat > ci_define.json <<'JSON'
+          { "SUPABASE_URL": "https://ci-placeholder.supabase.co",
+            "SUPABASE_ANON_KEY": "ci-placeholder-key" }
+          JSON
+          flutter build web --dart-define-from-file=ci_define.json --no-wasm-dry-run
+
+  sql:
+    name: SQL sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Migrations are valid UTF-8
+        # Two files were mojibake before; this stops that recurring.
+        run: |
+          fail=0
+          for f in supabase/migrations/*.sql supabase/provision/*.sql; do
+            iconv -f UTF-8 -t UTF-8 "$f" >/dev/null 2>&1 || { echo "::error file=$f::not valid UTF-8"; fail=1; }
+          done
+          exit $fail
+
+      - name: No enum value added and used in one migration
+        # Postgres rejects this and it aborts the whole migration.
+        # 007 and 009 genuinely do it, which is WHY provision/part2_enum_values.sql
+        # exists to run the ALTERs separately -- so they are allowlisted here. The
+        # check is for NEW occurrences.
+        run: |
+          fail=0
+          ALLOW="007_service_requests.sql 009_staff_invites.sql"
+          for f in supabase/migrations/*.sql; do
+            case " $ALLOW " in *" $(basename "$f") "*) continue;; esac
+            if grep -q 'ADD VALUE' "$f"; then
+              val=$(grep -oE "ADD VALUE IF NOT EXISTS '[a-z_]+'" "$f" | grep -oE "'[a-z_]+'" | tr -d "'" || true)
+              for v in $val; do
+                if grep -v 'ADD VALUE' "$f" | grep -q "'$v'"; then
+                  echo "::error file=$f::adds enum value '$v' and uses it in the same migration"
+                  fail=1
+                fi
+              done
+            fi
+          done
+          exit $fail
+
+      - name: No OLD/NEW outside a trigger function
+        # An RLS policy referencing OLD aborted the entire RLS migration once (fixed
+        # in 004). 002_rls_policies.sql still contains it but is the legacy duplicate
+        # MIGRATIONS.md says never to run, so it is allowlisted rather than edited.
+        run: |
+          fail=0
+          ALLOW="002_rls_policies.sql"
+          for f in supabase/migrations/*.sql; do
+            case " $ALLOW " in *" $(basename "$f") "*) continue;; esac
+            if awk '/CREATE POLICY/,/;/' "$f" | grep -qE '\b(OLD|NEW)\.'; then
+              echo "::error file=$f::a CREATE POLICY references OLD/NEW, which is trigger-only syntax"
+              fail=1
+            fi
+          done
+          exit $fail
