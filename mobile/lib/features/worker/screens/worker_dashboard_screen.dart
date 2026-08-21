@@ -327,15 +327,16 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     if (uid == null) return;
     _msgChannel = Supabase.instance.client
         .channel('worker_dm_$uid')
-        .on(
-          RealtimeListenTypes.postgresChanges,
-          ChannelFilter(
-            event: 'INSERT',
-            schema: 'public',
-            table: 'direct_messages',
-            filter: 'recipient_id=eq.$uid',
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'direct_messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'recipient_id',
+            value: uid,
           ),
-          (payload, [ref]) => _loadMessages(),
+          callback: (payload) => _loadMessages(),
         );
     _msgChannel?.subscribe();
   }
@@ -1900,11 +1901,11 @@ class _WorkerConversationScreenState
     if (uid == null) return;
     _channel = Supabase.instance.client
         .channel('wconv_${uid}_${widget.partnerId}')
-        .on(
-          RealtimeListenTypes.postgresChanges,
-          ChannelFilter(
-              event: 'INSERT', schema: 'public', table: 'direct_messages'),
-          (payload, [ref]) => _load(),
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'direct_messages',
+          callback: (payload) => _load(),
         );
     _channel?.subscribe();
   }

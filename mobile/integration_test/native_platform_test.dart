@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:valet/core/platform/csv_download_stub.dart' as csv;
@@ -77,13 +80,47 @@ void main() {
   });
 
   group('downloadCsv end to end', () {
-    testWidgets('writes the file without throwing', (tester) async {
-      // Share sheet presentation cannot be asserted headlessly, but everything up
-      // to it -- temp dir, file write, XFile construction -- runs for real here.
+    testWidgets('opens the share sheet instead of throwing', (tester) async {
+      // Two failure modes, and the test has to tell them apart.
+      //
+      //  * Throwing is a real bug. Without sharePositionOrigin, share_plus raises
+      //    `PlatformException(sharePositionOrigin: argument must be set)` on every
+      //    iPad. That exception is ASYNC, so an earlier version of this test using
+      //    returnsNormally on an un-awaited future raced past it and reported green.
+      //
+      //  * Not completing is correct. Share.shareXFiles resolves only when the user
+      //    dismisses the sheet, and nothing does that in an unattended run -- an
+      //    awaited version of this test hung for 56 minutes.
+      //
+      // So: bound it. A timeout means the sheet opened and is waiting for a human,
+      // which is success. Any PlatformException propagates and fails.
       final dir = await getTemporaryDirectory();
-      final probe = File('${dir.path}/owner_financials_by_property.csv');
+      final probe = File('${dir.path}/probe.csv');
       if (await probe.exists()) await probe.delete();
-      expect(() => csv.downloadCsv('a,b\n1,2\n', 'probe.csv'), returnsNormally);
+
+      var sheetOpened = false;
+      try {
+        await csv
+            .downloadCsv(
+              'property,revenue\nSunset Gardens,850\n',
+              'probe.csv',
+              // Non-zero rect inside the view, exactly as the call sites pass.
+              sharePositionOrigin: const Rect.fromLTWH(0, 0, 100, 100),
+            )
+            .timeout(const Duration(seconds: 5));
+      } on TimeoutException {
+        sheetOpened = true;
+      }
+
+      // Either it returned or it is waiting on the sheet -- both fine. What matters
+      // is that no PlatformException escaped, and that the file really got written.
+      expect(await probe.exists(), isTrue,
+          reason: 'downloadCsv should have written the CSV before sharing');
+      expect(await probe.readAsString(), contains('Sunset Gardens'));
+      debugPrint(sheetOpened
+          ? 'share sheet opened and is awaiting dismissal (expected headless)'
+          : 'share sheet completed');
+      await probe.delete();
     });
   });
 }

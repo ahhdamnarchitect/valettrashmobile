@@ -11,9 +11,10 @@ void main() async {
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     anonKey: AppConfig.supabaseAnonKey,
-    // Handles the com.relaxedliving.valet://login-callback deep link
-    // that Supabase sends back after password reset on mobile.
-    authCallbackUrlHostname: 'login-callback',
+    // supabase_flutter v2 dropped authCallbackUrlHostname and detects the
+    // com.relaxedliving.valet://login-callback deep link automatically via
+    // app_links, using the scheme declared in the iOS/Android manifests. The
+    // redirect must still be whitelisted under Auth -> URL Configuration.
   );
 
   runApp(const ValetApp());

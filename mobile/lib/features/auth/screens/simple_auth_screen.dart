@@ -90,7 +90,7 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
       final accessToken = googleAuth.accessToken;
       if (idToken == null) throw Exception('Google sign-in failed: no ID token');
       await Supabase.instance.client.auth.signInWithIdToken(
-        provider: Provider.google,
+        provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
@@ -133,7 +133,7 @@ class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
       final idToken = credential.identityToken;
       if (idToken == null) throw Exception('Apple sign-in failed: no identity token');
       await Supabase.instance.client.auth.signInWithIdToken(
-        provider: Provider.apple,
+        provider: OAuthProvider.apple,
         idToken: idToken,
         nonce: rawNonce,
       );

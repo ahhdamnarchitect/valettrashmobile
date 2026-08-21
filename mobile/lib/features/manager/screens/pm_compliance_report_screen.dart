@@ -66,6 +66,15 @@ class _PmComplianceReportScreenState extends State<PmComplianceReportScreen> {
     return '${(_completed / _runs.length * 100).toStringAsFixed(0)}%';
   }
 
+
+  /// Anchor rect for the iOS share popover. Required on iPad -- share_plus throws
+  /// `sharePositionOrigin: argument must be set` without it.
+  Rect? _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   Future<void> _exportCsv() async {
     final buf = StringBuffer();
     buf.writeln('Date,Status,Started,Completed');
@@ -81,7 +90,9 @@ class _PmComplianceReportScreenState extends State<PmComplianceReportScreen> {
     final filename =
         '${widget.propertyName.replaceAll(' ', '_')}_compliance_${_fmtDate(DateTime.now().toIso8601String())}.csv';
     try {
-      await downloadCsv(buf.toString(), filename);
+      await downloadCsv(
+buf.toString(), filename,
+            sharePositionOrigin: _shareOrigin());
     } catch (e) {
       // Native export writes a file and opens the share sheet; on web it
       // triggers a download. Either can fail, and this used to be a plain

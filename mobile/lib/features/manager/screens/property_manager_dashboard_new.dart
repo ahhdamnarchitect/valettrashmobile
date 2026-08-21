@@ -411,6 +411,15 @@ class _PropertyManagerDashboardNewScreenState
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+
+  /// Anchor rect for the iOS share popover. Required on iPad -- share_plus throws
+  /// `sharePositionOrigin: argument must be set` without it.
+  Rect? _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   Future<void> _exportUnitCodesCsv() async {
     final buf = StringBuffer();
     buf.writeln(
@@ -452,6 +461,7 @@ class _PropertyManagerDashboardNewScreenState
       await downloadCsv(
         buf.toString(),
         '${safeName}_resident_invite_codes.csv',
+        sharePositionOrigin: _shareOrigin(),
       );
     } catch (e) {
       // Native export writes a file and opens the share sheet; on web it

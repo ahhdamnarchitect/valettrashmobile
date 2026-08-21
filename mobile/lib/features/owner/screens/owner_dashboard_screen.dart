@@ -1389,6 +1389,15 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     );
   }
 
+
+  /// Anchor rect for the iOS share popover. Required on iPad -- share_plus throws
+  /// `sharePositionOrigin: argument must be set` without it.
+  Rect? _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   Future<void> _exportFinancialsCsv() async {
     final buf = StringBuffer();
     buf.writeln(
@@ -1403,7 +1412,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       );
     }
     try {
-      await downloadCsv(buf.toString(), 'owner_financials_by_property.csv');
+      await downloadCsv(
+buf.toString(), 'owner_financials_by_property.csv',
+            sharePositionOrigin: _shareOrigin());
     } catch (e) {
       // Native export writes a file and opens the share sheet; on web it
       // triggers a download. Either can fail, and this used to be a plain
