@@ -66,10 +66,22 @@ bumped directly because `supabase_flutter 1.10.25` pins `sign_in_with_apple <6.0
 so it arrives transitively. Fixed with a documented `dependency_overrides` pin to
 `^6.1.4` (v2 embedding); the app's calls are identical across both versions.
 
-- [ ] **Plan a `supabase_flutter` 1.10.25 → 2.x upgrade.** It dates from 2023 (2.17.2
-      is current) and it is what pins the ancient `sign_in_with_apple`. The override
-      is a stopgap; the upgrade is the real fix and deserves its own scoped effort,
-      not an improvised one.
+- [x] ~~Plan a `supabase_flutter` 1.10.25 → 2.x upgrade~~ — **done 2026-08-20**, now on
+      **2.16.0** and the `dependency_overrides` stopgap is removed. It turned out far
+      smaller than expected: the codebase had **zero `.execute()` calls**, so the real
+      breaking surface was 9 errors in 3 files (`Provider`→`OAuthProvider`, the
+      realtime `.on()`→`.onPostgresChanges()` API, and `authCallbackUrlHostname`
+      which v2 auto-detects). Verified on web (live owner login), iOS and Android.
+
+- [ ] **Test password-reset deep linking** once SMTP exists. v2 handles
+      `com.relaxedliving.valet://login-callback` automatically through `app_links`
+      rather than the old `authCallbackUrlHostname`, and that path has **not** been
+      exercised — it needs a real reset email. Whitelist the redirect under
+      Auth → URL Configuration.
+
+- [ ] ⚠️ **`flutter clean` after any dependency change.** A stale
+      `web_plugin_registrant.dart` made the web build fail with what looked like a
+      broken `app_links` package. It is not; it is a caching artifact.
 
 Toolchains are installed and reproducible (all under `$HOME`, removable with
 `rm -rf ~/.jdks ~/Library/Android`):
