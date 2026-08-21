@@ -38,44 +38,51 @@ Probed every role against the live API and ran the app. Migrations `026`–`029`
   and never sent one to Apple, so it could not have worked even once configured.
 - **`ResidentServiceCalendarScreen` wired in** (service windows + holiday schedule).
 
-### Native-platform gaps — implemented 2026-08-20, device verification BLOCKED
+### Native platform — VERIFIED ON DEVICE 2026-08-20
 
-- [x] **CSV export** — native stub was `// No-op`; now writes a temp file and opens the
-      share sheet (`share_plus`).
+Both features are implemented **and proven on an iPhone 17 Pro simulator**, not just
+compile-checked.
+
+- [x] **CSV export** — native stub was `// No-op`; now writes a temp file and opens
+      the share sheet.
 - [x] **Worker GPS** — native stub returned `null` unconditionally; now implemented
-      with `geolocator` (service check, permission request, 10s high-accuracy fix).
-      No platform config was needed: `NSLocationWhenInUseUsageDescription` and the
-      Android `ACCESS_FINE/COARSE_LOCATION` entries were already present with
-      App Store-ready usage strings.
-
-⚠️ **Both are compile-verified only. Neither has run on a device**, and that is
-blocked in this environment, not merely skipped:
+      with `geolocator`, bounded at 20s end to end.
 
 ```
-flutter build ios  ->  "CocoaPods not installed or not in valid state."
-gem install cocoapods -> ffi requires Ruby >= 3.0; macOS ships Ruby 2.6.10
++1  path_provider is linked and returns a writable dir       PASS
++2  geolocator is linked and responds to platform calls      PASS
++3  getPlatformLocation is bounded and never throws          PASS (21s)
++4  downloadCsv end to end writes the file without throwing  PASS
 ```
 
-Xcode 26.6 works and simulators exist (iPhone 17 Pro, iPad Pro M5, …). The only
-missing piece is CocoaPods, which cannot be installed on the system Ruby. **To
-unblock, one of:**
+Running on a device found a bug nothing else could: `requestPermission()` waits on a
+system dialog with no timeout, so a worker who ignored the prompt left "Share
+location" spinning forever. Now bounded.
+
+**The iOS build works on this machine now.** It was blocked by CocoaPods, which was
+blocked by `ffi` needing Ruby >= 3.0 against macOS's 2.6.10. Resolved without sudo or
+Homebrew by pinning each gem whose current release dropped 2.6 (`ffi 1.15.5`,
+`zeitwerk 2.5.4`, `i18n 1.8.11`, `concurrent-ruby 1.2.3`, `activesupport 6.1.7.6`),
+then installing CocoaPods 1.11.3 into `~/.gem`. To use it:
 
 ```bash
-# Option A - Homebrew (recommended; installs its own Ruby)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install cocoapods
-
-# Option B - a modern Ruby, then the gem
-brew install ruby        # or rbenv install 3.3.x
-gem install cocoapods
+export GEM_HOME="$HOME/.gem/ruby/2.6.0"; export PATH="$GEM_HOME/bin:$PATH"
+flutter build ios --simulator --debug --dart-define-from-file=dart_define.json
 ```
 
-Then `flutter build ios --simulator` and exercise: worker **Share location**, and
-**Export CSV** on the owner Financials and PM Compliance screens.
+Re-running the on-device tests:
 
-Note: Flutter now uses Swift Package Manager for most plugins. Only `app_links`,
-`rive_common`, `share_plus` and `sign_in_with_apple` still need CocoaPods — three of
-those four predate this work.
+```bash
+xcrun simctl boot "iPhone 17 Pro"
+xcrun simctl privacy booted grant location-always com.relaxedliving.valet   # else the
+xcrun simctl location booted set 32.7767,-96.7970                           # run hangs
+flutter test integration_test/native_platform_test.dart -d <simulator-udid> \
+  --dart-define-from-file=dart_define.json
+```
+
+⚠️ Still unexercised on a **physical** device and on **Android** (no Android SDK on
+this machine). The share sheet's own presentation cannot be asserted headlessly —
+worth one manual tap on the first TestFlight build.
 
 ### GitHub integration — NOT a defect (corrected 2026-08-20)
 
