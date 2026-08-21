@@ -83,3 +83,13 @@ flutter:
     - assets/lottie/
     - assets/rive/
     - assets/icon/
+
+# supabase_flutter 1.10.25 pins sign_in_with_apple <6.0.0, but 5.0.0 uses Flutter's
+# removed v1 plugin API (PluginRegistry.Registrar) and therefore FAILS TO COMPILE FOR
+# ANDROID -- the app could not be built for the Play Store at all. 6.x is the same
+# public API for everything this app calls (getAppleIDCredential /
+# AppleIDAuthorizationScopes / identityToken), so overriding is safe and far smaller
+# than a supabase_flutter 1.x -> 2.x migration. Remove this once supabase_flutter is
+# upgraded.
+dependency_overrides:
+  sign_in_with_apple: ^6.1.4
