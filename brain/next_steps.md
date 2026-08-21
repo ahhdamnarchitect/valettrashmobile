@@ -167,6 +167,27 @@ The buttons are on the login screen and fail with a clear message until configur
 - Until then: either configure both, or hide the two buttons. Email/password works
   today and is what all six roles use.
 
+### Backend performance — audited and tuned 2026-08-21
+
+Timed every role/table pair against the live API rather than assuming the RLS work
+was done. Two real findings, both fixed and verified:
+
+| Finding | Before | After |
+|---|---|---|
+| `pm_has_unit()` had no role guard, so a **resident** reading `violations` ran a 4-table join per row (migration `030`) | 1.87s | **0.33s** |
+| 61 policies called `auth.uid()` bare, re-evaluating it per row instead of once per query (migration `031`) | 294 Advisor warnings | **233** |
+
+Access matrix (19 tables × 5 roles) captured before and after and diffed — **identical**.
+All attack probes still blocked. Advisor: **0 errors** on both Security and Performance.
+
+- [ ] **233 "Multiple Permissive Policies" warnings remain — deliberately.** Each table
+      carries separate policies for owner, ops, PM, worker and resident, so Postgres
+      evaluates all of them and ORs the results. Collapsing them into one merged policy
+      per table/command would be a redesign of the whole authorisation model, with real
+      regression risk, and the split is exactly what the verified access matrix is built
+      on. Worth doing only with the row-count matrix as a regression harness, deliberately,
+      not as a late-session tidy-up.
+
 ### Remaining — owner action only### Remaining — owner action only (I can't do these)
 
 - [ ] **Set the Stripe secrets** on the new project: `STRIPE_SECRET_KEY`,
