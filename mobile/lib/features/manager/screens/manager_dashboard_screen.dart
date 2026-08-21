@@ -18,6 +18,7 @@ import 'om_worker_map_screen.dart';
 import 'om_workforce_screen.dart';
 import 'simple_notification_sender_screen.dart';
 import 'today_comebacks_screen.dart';
+import '../../../core/utils/error_reporter.dart';
 
 class ManagerDashboardScreen extends StatefulWidget {
   const ManagerDashboardScreen({super.key});
@@ -74,7 +75,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             .eq('id', uid)
             .maybeSingle();
         if (profile != null) _firstName = profile['first_name']?.toString();
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('manager_dashboard_screen._loadData', e);
+      }
 
       final userPropsRows = await supabase
           .from('user_properties')
@@ -186,7 +189,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           spots.add(FlSpot((6 - i).toDouble(), rate));
           labels.add('${day.month}/${day.day}');
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('manager_dashboard_screen.operation', e);
+      }
 
       setState(() {
         _workers = uniqueWorkers;

@@ -1,0 +1,5 @@
+{
+  "_comment": "Copy to dart_define.json and fill in. dart_define.json is gitignored. Values: Supabase Dashboard -> Settings -> API. These are NOT secrets - the anon/publishable key ships inside the built app by design, and RLS is what protects the data. Never put service_role or Stripe secrets here; those go in Supabase Edge Function secrets (brain/stripe_setup.md).",
+  "SUPABASE_URL": "https://immiejqvnucndjspacwv.supabase.co",
+  "SUPABASE_ANON_KEY": "your-anon-or-publishable-key"
+}

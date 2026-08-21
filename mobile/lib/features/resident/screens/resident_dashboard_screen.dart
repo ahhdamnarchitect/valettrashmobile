@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/error_reporter.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -17,6 +18,9 @@ import '../widgets/extra_services_grid.dart';
 import 'resident_comeback_request_screen.dart';
 import 'resident_concerns_screen.dart';
 import 'resident_notifications_screen.dart';
+import 'resident_report_missed_pickup_screen.dart';
+import 'resident_service_calendar_screen.dart';
+import 'resident_violations_screen.dart';
 import 'resident_vacation_hold_screen.dart';
 
 class ResidentDashboardScreen extends StatefulWidget {
@@ -139,7 +143,9 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
       if (onDuty != _workerClockedIn && mounted) {
         setState(() => _workerClockedIn = onDuty);
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('resident_dashboard_screen._pollWorkerClockStatus', e);
+    }
   }
 
   String _fmtTime(dynamic pgTime) {
@@ -257,7 +263,9 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             : _violationCount == 1
                 ? 'Warning'
                 : '$_violationCount active';
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('resident_dashboard_screen.operation', e);
+      }
 
       // Load satisfaction count
       try {
@@ -266,7 +274,9 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             .select('id')
             .eq('user_id', uid);
         _completedRatingCount = (ratings as List).length;
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('resident_dashboard_screen.operation', e);
+      }
 
       if (mounted) setState(() => _loading = false);
       if (_propertyId != null) _pollWorkerClockStatus();
@@ -386,7 +396,7 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             ),
             const SizedBox(height: 12),
           ],
-          _buildMockHeader(),
+          _buildResidentHeader(),
           const SizedBox(height: 16),
           _buildNextPickupCard(),
           const SizedBox(height: 12),
@@ -404,7 +414,9 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
     );
   }
 
-  Widget _buildMockHeader() {
+  // Renamed from _buildMockHeader: it renders live data (_residentName,
+  // _workerStatusColor) and the old name made it look like a placeholder.
+  Widget _buildResidentHeader() {
     return Row(
       children: [
         CircleAvatar(
@@ -586,7 +598,13 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
         ),
         const SizedBox(width: 12),
         Expanded(
+          // The tile showed a violation count with no way to see the violations
+          // themselves - ResidentViolationsScreen existed but nothing opened it.
           child: BentoCard(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ResidentViolationsScreen()),
+            ),
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,6 +670,37 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
             title: 'Service History',
             subtitle: 'View past pickups',
             onTap: () => _openExtraServices(segment: 0),
+          ),
+          const Divider(height: 1, color: AppColors.border),
+          // ResidentServiceCalendarScreen (service windows + the holiday schedule)
+          // was fully built but unreachable, so residents had no way to see which
+          // nights are serviced or which holidays are skipped.
+          _quickActionTile(
+            icon: Icons.event_available_outlined,
+            title: 'Service Calendar',
+            subtitle: 'Pickup nights and holiday schedule',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ResidentServiceCalendarScreen()),
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.border),
+          // ResidentReportMissedPickupScreen was fully built but nothing imported it,
+          // so residents had no way to report a missed pickup - the trigger for the
+          // whole comeback loop.
+          _quickActionTile(
+            icon: Icons.report_gmailerrorred_outlined,
+            title: 'Report a Missed Pickup',
+            subtitle: 'Tell us if we missed your door',
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ResidentReportMissedPickupScreen()),
+              );
+              if (mounted) _load();
+            },
           ),
           const Divider(height: 1, color: AppColors.border),
           _quickActionTile(
@@ -947,7 +996,12 @@ class _ResidentDashboardScreenState extends State<ResidentDashboardScreen> {
         'rating': rating,
       });
       if (mounted) setState(() => _completedRatingCount++);
-    } catch (_) {}
+    } catch (e) {
+      // The tap simply did nothing before: no error, no recorded rating.
+      ErrorReporter.showError(mounted ? context : null,
+          'Could not save your rating - please try again',
+          error: e, logContext: 'satisfaction_ratings insert');
+    }
   }
 
   // ── Extra Services Tab ────────────────────────────────────────────────────────

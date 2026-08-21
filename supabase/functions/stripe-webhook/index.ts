@@ -16,14 +16,29 @@ serve(async (req) => {
     return new Response("Server not configured", { status: 503 });
   }
 
-  const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+  // Deno has no synchronous crypto, so Stripe's SDK needs an explicit SubtleCrypto
+  // provider and the async signature check. See constructEventAsync below.
+  const stripe = new Stripe(stripeSecret, {
+    apiVersion: "2023-10-16",
+    httpClient: Stripe.createFetchHttpClient(),
+  });
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new Response("No signature", { status: 400 });
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    // MUST be constructEventAsync in Deno. The synchronous constructEvent() throws
+    // "SubtleCryptoProvider cannot be used in a synchronous context", which this
+    // catch block turned into a generic 400 "Bad signature" - so EVERY webhook
+    // failed, and customers were charged without ever receiving their credits.
+    event = await stripe.webhooks.constructEventAsync(
+      body,
+      sig,
+      webhookSecret,
+      undefined,
+      Stripe.createSubtleCryptoProvider(),
+    );
   } catch (e) {
     console.error("Webhook signature verification failed:", e);
     return new Response("Bad signature", { status: 400 });

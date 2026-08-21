@@ -9,6 +9,9 @@ import '../../../core/platform/geo_helper_stub.dart'
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/storage/photo_storage.dart';
+import '../../../core/utils/error_reporter.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/glow_badge.dart';
@@ -17,6 +20,7 @@ import '../../../core/widgets/role_bottom_nav.dart';
 import '../../../core/widgets/skeleton_card.dart';
 import '../../auth/screens/change_password_screen.dart';
 import '../../../core/utils/page_transitions.dart';
+import 'violation_report_screen.dart';
 import 'worker_earnings_screen.dart';
 import 'worker_route_map_screen.dart';
 
@@ -88,7 +92,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         if (profile != null) {
           _firstName = profile['first_name']?.toString();
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('worker_dashboard_screen._loadRouteData', e);
+      }
 
       // Worker assignments
       final assigns = await client
@@ -152,7 +158,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           if (runList.isNotEmpty) {
             _activeRunId = runList.first['id']?.toString();
           }
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('worker_dashboard_screen.operation', e);
+        }
       }
 
       // Load stops if we have an active route
@@ -201,7 +209,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           final ts = lastEvent['created_at']?.toString();
           if (ts != null) _clockedInAt = DateTime.tryParse(ts);
         }
-      } catch (_) {}
+      } catch (e) {
+        ErrorReporter.logSilent('worker_dashboard_screen.operation', e);
+      }
     } catch (_) {
       _comebackRequests = [];
     } finally {
@@ -231,7 +241,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           completedIds = (completed as List)
               .map((c) => c['stop_id'].toString())
               .toSet();
-        } catch (_) {}
+        } catch (e) {
+          ErrorReporter.logSilent('worker_dashboard_screen._loadStops', e);
+        }
       }
 
       final remaining = allStops.where((s) => !completedIds.contains(s['id']?.toString())).map((s) {
@@ -251,7 +263,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           _currentStopIndex = 0;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('worker_dashboard_screen._loadStops', e);
+    }
   }
 
   Future<void> _completeStop(String stopId,
@@ -303,7 +317,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         }
       }
       if (mounted) setState(() => _conversations = convMap.values.toList());
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.logSilent('worker_dashboard_screen._loadMessages', e);
+    }
   }
 
   void _subscribeMessages() {
@@ -311,15 +327,16 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     if (uid == null) return;
     _msgChannel = Supabase.instance.client
         .channel('worker_dm_$uid')
-        .on(
-          RealtimeListenTypes.postgresChanges,
-          ChannelFilter(
-            event: 'INSERT',
-            schema: 'public',
-            table: 'direct_messages',
-            filter: 'recipient_id=eq.$uid',
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'direct_messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'recipient_id',
+            value: uid,
           ),
-          (payload, [ref]) => _loadMessages(),
+          callback: (payload) => _loadMessages(),
         );
     _msgChannel?.subscribe();
   }
@@ -335,7 +352,18 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           'status': 'completed',
           'completed_at': DateTime.now().toUtc().toIso8601String(),
         }).eq('id', id);
-      } catch (_) {}
+      } catch (e) {
+        // Was swallowed, and the row was then removed from the list anyway - so the
+        // comeback vanished from the worker's screen while still sitting pending in
+        // the database. Keep it visible and say what happened.
+        ErrorReporter.showError(
+          mounted ? context : null,
+          'Could not mark this comeback complete - it stays on your list',
+          error: e,
+          logContext: 'missed_pickup_requests complete',
+        );
+        return;
+      }
     }
     if (mounted) {
       setState(() => _comebackRequests.removeAt(index));
@@ -410,7 +438,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                         photoBytes = bytes;
                         photoName = file.name;
                       });
-                    } catch (_) {}
+                    } catch (e) {
+                      ErrorReporter.logSilent('worker_dashboard_screen._showCompleteSheet', e);
+                    }
                   },
                   child: Container(
                     height: photoBytes != null ? null : 100,
@@ -468,15 +498,16 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                 setSheetState(() => uploading = true);
                                 if (photoBytes != null && photoName != null) {
                                   try {
-                                    final uid = Supabase
-                                        .instance.client.auth.currentUser?.id;
-                                    final ext = photoName!.split('.').last;
-                                    final path =
-                                        'pickup_proofs/$uid/${DateTime.now().millisecondsSinceEpoch}.$ext';
-                                    await Supabase.instance.client.storage
-                                        .from('violations')
-                                        .uploadBinary(path, photoBytes!);
-                                  } catch (_) {}
+                                    await PhotoStorage.uploadWorkerPhoto(
+                                      photoBytes!,
+                                      kind: 'pickup_proofs',
+                                      ext: photoName!.split('.').last,
+                                    );
+                                  } catch (e) {
+                                    // Surface it: this used to fail silently on
+                                    // every upload (wrong bucket prefix -> 403).
+                                    _snack('Photo upload failed - saving without it');
+                                  }
                                 }
                                 if (ctx.mounted) Navigator.pop(ctx);
                                 _completeComebackRequest(index);
@@ -520,6 +551,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           'No property assigned yet. Ask your admin to assign you under Worker Assignments.');
       return;
     }
+    final previousOnDuty = _isOnDuty;
+    final previousClockedInAt = _clockedInAt;
     setState(() {
       _isOnDuty = newState;
       _clockedInAt = newState ? DateTime.now() : null;
@@ -530,7 +563,26 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         'event_type': newState ? 'clock_in' : 'clock_out',
         'property_id': _propertyId,
       });
-    } catch (_) {}
+    } catch (e) {
+      // This used to be swallowed while the UI still switched to ON DUTY and said
+      // so. The clock event drives payroll, so a silent failure meant unpaid hours
+      // and a worker with no reason to suspect anything. Roll the state back.
+      if (mounted) {
+        setState(() {
+          _isOnDuty = previousOnDuty;
+          _clockedInAt = previousClockedInAt;
+        });
+      }
+      ErrorReporter.showError(
+        mounted ? context : null,
+        newState
+            ? 'Could not clock in - check your connection and try again'
+            : 'Could not clock out - check your connection and try again',
+        error: e,
+        logContext: 'clock_events insert',
+      );
+      return;
+    }
     _snack(newState
         ? 'You are on duty — residents at this property will see ON DUTY'
         : 'You are now off duty');
@@ -1380,14 +1432,10 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     try {
       final bytes = await image.readAsBytes();
       final stopId = stop['id'] as String;
-      final path = 'stops/${stopId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage
-          .from('pickup-photos')
-          .uploadBinary(path, bytes);
-      final url = Supabase.instance.client.storage
-          .from('pickup-photos')
-          .getPublicUrl(path);
-      await _completeStop(stopId, photoUrl: url, method: 'photo');
+      // Was bucket 'pickup-photos', which does not exist, with getPublicUrl() on
+      // what is a private bucket. Store the path; sign it on read.
+      final path = await PhotoStorage.uploadWorkerPhoto(bytes, kind: 'stops');
+      await _completeStop(stopId, photoUrl: path, method: 'photo');
       _advanceStop();
     } catch (e) {
       _snack('Photo upload failed — try again');
@@ -1424,7 +1472,17 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         'status': 'pending',
         'requested_at': DateTime.now().toIso8601String(),
       });
-    } catch (_) {}
+    } catch (e) {
+      // Previously swallowed, and then _snack said "Comeback flagged" regardless.
+      // A resident who reported a missed pickup would simply never be serviced.
+      ErrorReporter.showError(
+        mounted ? context : null,
+        'Could not flag this comeback - please try again',
+        error: e,
+        logContext: 'missed_pickup_requests insert',
+      );
+      return;
+    }
     _snack('Comeback flagged');
     _advanceStop();
   }
@@ -1633,6 +1691,40 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
+              // Violation reporting is a core part of the service (bag rules,
+              // prohibited items). ViolationReportScreen was fully built but had
+              // no entry point anywhere in the app, so no worker could ever file one.
+              BentoCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.report_problem_outlined,
+                        color: AppColors.warning, size: 20),
+                  ),
+                  title: Text('Report a Violation',
+                      style: GoogleFonts.inter(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600)),
+                  subtitle: Text('Bag rules, prohibited items, photo evidence',
+                      style: GoogleFonts.inter(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right,
+                      color: AppColors.textSecondary, size: 20),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(
+                          builder: (_) => const ViolationReportScreen())),
+                ),
+              ),
+              const SizedBox(height: 10),
               BentoCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
@@ -1798,7 +1890,10 @@ class _WorkerConversationScreenState
       if (mounted) {
         setState(() => _messages = List<Map<String, dynamic>>.from(msgs));
       }
-    } catch (_) {}
+    } catch (e) {
+      ErrorReporter.showError(mounted ? context : null, 'Could not load messages',
+          error: e, logContext: 'direct_messages load');
+    }
   }
 
   void _subscribe() {
@@ -1806,11 +1901,11 @@ class _WorkerConversationScreenState
     if (uid == null) return;
     _channel = Supabase.instance.client
         .channel('wconv_${uid}_${widget.partnerId}')
-        .on(
-          RealtimeListenTypes.postgresChanges,
-          ChannelFilter(
-              event: 'INSERT', schema: 'public', table: 'direct_messages'),
-          (payload, [ref]) => _load(),
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'direct_messages',
+          callback: (payload) => _load(),
         );
     _channel?.subscribe();
   }
@@ -1829,7 +1924,13 @@ class _WorkerConversationScreenState
         'body': text,
       });
       await _load();
-    } catch (_) {
+    } catch (e) {
+      // The field was cleared before the insert, so a swallowed failure meant the
+      // worker watched their message disappear and assumed it sent. Restore it.
+      _ctrl.text = text;
+      ErrorReporter.showError(mounted ? context : null,
+          'Message not sent - tap send to try again',
+          error: e, logContext: 'direct_messages send');
     } finally {
       if (mounted) setState(() => _sending = false);
     }

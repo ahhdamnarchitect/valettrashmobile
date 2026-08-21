@@ -1,0 +1,26 @@
+# Keeps dependencies patched. sign_in_with_apple sat on a version using Flutter's
+# removed v1 plugin API until it made the Android build impossible -- exactly the kind
+# of drift this catches early.
+version: 2
+updates:
+  - package-ecosystem: pub
+    directory: /mobile
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      supabase:
+        patterns: ['supabase*', 'gotrue', 'postgrest', 'realtime_client', 'storage_client']
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /admin_dashboard
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

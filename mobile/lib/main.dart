@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/config/app_config.dart';
 import 'valet_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  AppConfig.assertConfigured();
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL'] ?? 'https://your-project.supabase.co',
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? 'your-anon-key',
-    // Handles the com.relaxedliving.valet://login-callback deep link
-    // that Supabase sends back after password reset on mobile.
-    authCallbackUrlHostname: 'login-callback',
+    url: AppConfig.supabaseUrl,
+    anonKey: AppConfig.supabaseAnonKey,
+    // supabase_flutter v2 dropped authCallbackUrlHostname and detects the
+    // com.relaxedliving.valet://login-callback deep link automatically via
+    // app_links, using the scheme declared in the iOS/Android manifests. The
+    // redirect must still be whitelisted under Auth -> URL Configuration.
   );
 
   runApp(const ValetApp());

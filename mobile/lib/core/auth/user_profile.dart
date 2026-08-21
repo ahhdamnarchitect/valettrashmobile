@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/utils/error_reporter.dart';
 
 /// Loads [users.role] for [userId], retrying while signup RPCs finish.
 ///
@@ -20,8 +21,9 @@ Future<String?> fetchUserRole(
           .maybeSingle();
       final role = row?['role'];
       if (role != null) return role.toString();
-    } catch (_) {
+    } catch (e) {
       // Transient errors during signup — retry.
+      ErrorReporter.logSilent('user_profile.fetchUserRole', e);
     }
     if (attempt < maxAttempts - 1) {
       await Future.delayed(delay);

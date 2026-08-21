@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/error_reporter.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/glow_badge.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -79,7 +81,10 @@ class _ResidentSignupScreenState extends State<ResidentSignupScreen> {
       return row is Map<String, dynamic>
           ? row
           : Map<String, dynamic>.from(row as Map);
-    } catch (_) {
+    } catch (e) {
+      // Returning null makes a network failure indistinguishable from a genuinely
+      // invalid code, so at least record which one it actually was.
+      ErrorReporter.logSilent('verify_invite_code rpc', e);
       return null;
     }
   }

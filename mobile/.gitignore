@@ -46,3 +46,6 @@ app.*.map.json
 
 # Environment — never commit credentials
 .env
+
+# Compile-time config (--dart-define-from-file); template is dart_define.example.json
+dart_define.json
