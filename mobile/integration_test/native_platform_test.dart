@@ -43,7 +43,19 @@ void main() {
 
     testWidgets('getPlatformLocation returns a fix or a clean null',
         (tester) async {
-      // Never throws by contract - the caller shows "unavailable" on null.
+      // Only exercise the full path when permission is already settled. Calling it
+      // while permission is still `denied` puts up the system dialog, and in an
+      // unattended run nothing dismisses it -- the first version of this test hung
+      // there indefinitely. That hang is what exposed the missing overall timeout in
+      // getPlatformLocation, which is now bounded at 20s.
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        markTestSkipped('location permission not pre-granted; skipping the '
+            'interactive path. Grant it first with: xcrun simctl privacy booted '
+            'grant location-always com.relaxedliving.valet');
+        return;
+      }
+
       final coords = await geo.getPlatformLocation();
       if (coords != null) {
         expect(coords['lat'], isA<double>());
@@ -51,6 +63,16 @@ void main() {
         expect(coords['lat']!.abs(), lessThanOrEqualTo(90));
         expect(coords['lng']!.abs(), lessThanOrEqualTo(180));
       }
+    });
+
+    testWidgets('getPlatformLocation is bounded and never throws',
+        (tester) async {
+      // The contract the worker dashboard relies on: it always completes, so the
+      // "Share location" button can never be left spinning.
+      final sw = Stopwatch()..start();
+      await expectLater(geo.getPlatformLocation(), completes);
+      sw.stop();
+      expect(sw.elapsed, lessThan(const Duration(seconds: 25)));
     });
   });
 
