@@ -1,6 +1,6 @@
+-- (enum ALTER moved to 007a_enum_owner.sql; see the note there)
 -- Extra / add-on service requests from residents (Moving, Maid, Bulk, etc.)
 -- Required before policies reference role 'owner' (Flutter OwnerDashboardScreen).
-ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'owner';
 
 CREATE TABLE IF NOT EXISTS public.service_requests (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,

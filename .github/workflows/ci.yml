@@ -79,36 +79,33 @@ jobs:
           exit $fail
 
       - name: No enum value added and used in one migration
-        # Postgres rejects this and it aborts the whole migration.
-        # 007 and 009 genuinely do it, which is WHY provision/part2_enum_values.sql
-        # exists to run the ALTERs separately -- so they are allowlisted here. The
-        # check is for NEW occurrences.
+        # Postgres will not let a new enum value be USED in the transaction that added
+        # it, and the GitHub integration runs each migration file as one transaction.
+        # 007/009 originally did exactly this, which is why they are now split into
+        # <enum-only> + <rest> files. No allowlist needed -- the structure is correct.
+        # Only executable SQL is inspected; a comment mentioning the value is fine.
         run: |
           fail=0
-          ALLOW="007_service_requests.sql 009_staff_invites.sql"
           for f in supabase/migrations/*.sql; do
-            case " $ALLOW " in *" $(basename "$f") "*) continue;; esac
-            if grep -q 'ADD VALUE' "$f"; then
-              val=$(grep -oE "ADD VALUE IF NOT EXISTS '[a-z_]+'" "$f" | grep -oE "'[a-z_]+'" | tr -d "'" || true)
-              for v in $val; do
-                if grep -v 'ADD VALUE' "$f" | grep -q "'$v'"; then
-                  echo "::error file=$f::adds enum value '$v' and uses it in the same migration"
-                  fail=1
-                fi
-              done
-            fi
+            grep -q 'ADD VALUE' "$f" || continue
+            vals=$(grep -oE "ADD VALUE IF NOT EXISTS '[a-z_]+'" "$f" | grep -oE "'[a-z_]+'" | tr -d "'")
+            body=$(grep -v '^\s*--' "$f" | grep -v 'ADD VALUE')
+            for v in $vals; do
+              if printf '%s' "$body" | grep -q "'$v'"; then
+                echo "::error file=$f::adds enum value '$v' and uses it in the same migration"
+                fail=1
+              fi
+            done
           done
           exit $fail
 
       - name: No OLD/NEW outside a trigger function
-        # An RLS policy referencing OLD aborted the entire RLS migration once (fixed
-        # in 004). 002_rls_policies.sql still contains it but is the legacy duplicate
-        # MIGRATIONS.md says never to run, so it is allowlisted rather than edited.
+        # An RLS policy referencing OLD aborted the entire RLS migration once. The
+        # legacy file that still contains it now lives in migrations/_deprecated/,
+        # which this glob does not reach -- so no allowlist is needed either.
         run: |
           fail=0
-          ALLOW="002_rls_policies.sql"
           for f in supabase/migrations/*.sql; do
-            case " $ALLOW " in *" $(basename "$f") "*) continue;; esac
             if awk '/CREATE POLICY/,/;/' "$f" | grep -qE '\b(OLD|NEW)\.'; then
               echo "::error file=$f::a CREATE POLICY references OLD/NEW, which is trigger-only syntax"
               fail=1

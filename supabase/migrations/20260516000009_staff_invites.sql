@@ -1,7 +1,7 @@
+-- (enum ALTER moved to 009a_enum_operations_manager.sql; see the note there)
 -- Staff invite codes for property managers, operations managers, and drivers.
 -- Residents continue to use invite_codes + unit flow.
 
-ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'operations_manager';
 
 CREATE TABLE IF NOT EXISTS public.staff_invites (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,15 +1,10 @@
--- PROVISION PART 3 of 5 - policies, features, RLS hardening, security fixes.
+-- PROVISION PART 3 of 4 - policies, features, RLS hardening, Stripe, perf.
 -- Run AFTER part 2 has committed.
--- The two ALTER TYPE ... ADD VALUE lines from 007 and 009 are omitted here on
--- purpose; they live in part2_enum_values.sql. Everything else is verbatim.
---
--- 016-025 are corrective/security migrations found while provisioning and
--- auditing on 2026-08-19. They are idempotent, and including them means a fresh
--- database lands exactly on the state verified against the live API:
---   0 Advisor errors, RLS on all 33 tables, 122 policies, no audit-log leak.
+-- Generated from migrations/ in filename order, excluding the baseline and the
+-- two enum-only files (those are parts 1 and 2).
 
 -- ============================================================
--- 004_rls_policies.sql
+-- 20260516000002_rls_policies.sql
 -- ============================================================
 -- Relaxed Living Valet - Row Level Security Policies
 -- This migration creates RLS policies for all tables
@@ -533,7 +528,7 @@ CREATE POLICY "Super admins can manage all SMS logs" ON public.sms_logs
     );
 
 -- ============================================================
--- 005_invites_user_properties_notifications_fix.sql
+-- 20260516000003_invites_user_properties_notifications_fix.sql
 -- ============================================================
 -- Relaxed Living Valet — bridges app + DB gaps (run after 004_rls_policies.sql)
 -- Safe to re-run on fresh projects: uses IF NOT EXISTS / DROP IF EXISTS where possible.
@@ -783,7 +778,7 @@ CREATE POLICY "Managers and admins insert notifications" ON public.notifications
 ALTER TABLE public.violations ALTER COLUMN pickup_id DROP NOT NULL;
 
 -- ============================================================
--- 006_storage_violations.sql
+-- 20260516000004_storage_violations.sql
 -- ============================================================
 -- Storage bucket for violation / support photos (private; access via RLS policies)
 
@@ -843,8 +838,9 @@ USING (
 );
 
 -- ============================================================
--- 007_service_requests.sql
+-- 20260516000006_service_requests.sql
 -- ============================================================
+-- (enum ALTER moved to 007a_enum_owner.sql; see the note there)
 -- Extra / add-on service requests from residents (Moving, Maid, Bulk, etc.)
 -- Required before policies reference role 'owner' (Flutter OwnerDashboardScreen).
 
@@ -899,7 +895,7 @@ CREATE POLICY "Owner and super_admin update service requests"
     );
 
 -- ============================================================
--- 008_resident_comeback_balance_service_time.sql
+-- 20260516000007_resident_comeback_balance_service_time.sql
 -- ============================================================
 -- Purchased comeback credits roll over; free monthly comeback tracked in resident_monthly_usage.
 -- Service requests: optional preferred time of day.
@@ -917,8 +913,9 @@ CREATE POLICY "Residents update own purchased comeback balance"
     WITH CHECK (user_id = auth.uid());
 
 -- ============================================================
--- 009_staff_invites.sql
+-- 20260516000009_staff_invites.sql
 -- ============================================================
+-- (enum ALTER moved to 009a_enum_operations_manager.sql; see the note there)
 -- Staff invite codes for property managers, operations managers, and drivers.
 -- Residents continue to use invite_codes + unit flow.
 
@@ -1107,7 +1104,7 @@ REVOKE ALL ON FUNCTION public.register_staff_with_invite(UUID, UUID, TEXT, TEXT,
 GRANT EXECUTE ON FUNCTION public.register_staff_with_invite(UUID, UUID, TEXT, TEXT, TEXT) TO authenticated;
 
 -- ============================================================
--- 010_property_billing_metrics.sql
+-- 20260516000010_property_billing_metrics.sql
 -- ============================================================
 -- Per-property contract billing: fee per door + 85% minimum billable occupancy.
 
@@ -1124,7 +1121,7 @@ COMMENT ON COLUMN public.properties.minimum_billable_occupancy_percent IS
     'Minimum share of total units billed even if fewer residents are active (e.g. 0.85 = 85%).';
 
 -- ============================================================
--- 011_property_door_counts.sql
+-- 20260516000011_property_door_counts.sql
 -- ============================================================
 -- Manual door counts for billing (when unit tree not fully built in app).
 
@@ -1141,7 +1138,7 @@ COMMENT ON COLUMN public.properties.billing_occupied_doors IS
     'Occupied doors for billing; falls back to active resident_units when null.';
 
 -- ============================================================
--- 012_workforce_labor.sql
+-- 20260516000012_workforce_labor.sql
 -- ============================================================
 -- Workforce: hourly rates, clock events, live locations (idempotent).
 
@@ -1247,7 +1244,7 @@ GRANT EXECUTE ON FUNCTION public.set_worker_hourly_rate(UUID, NUMERIC)
   TO authenticated;
 
 -- ============================================================
--- 013_unify_owner_role.sql
+-- 20260516000013_unify_owner_role.sql
 -- ============================================================
 -- Business owner: `owner` and `super_admin` are the same tier (app routes both to Owner dashboard).
 -- Canonical role for the primary login is `owner`.
@@ -1266,7 +1263,7 @@ COMMENT ON TYPE public.user_role IS
   'owner and super_admin both map to Owner dashboard; prefer owner for new accounts.';
 
 -- ============================================================
--- 014_launch_rls_hardening.sql
+-- 20260516000014_launch_rls_hardening.sql
 -- ============================================================
 -- Launch readiness: re-enable RLS, owner-admin helpers, policies for satellite tables.
 -- Apply AFTER 012 and 013. Run supabase/tests/rls_role_smoke.sql after applying.
@@ -1515,7 +1512,7 @@ CREATE POLICY "Read satisfaction ratings" ON public.satisfaction_ratings
   );
 
 -- ============================================================
--- 015_stripe_payments.sql
+-- 20260516000015_stripe_payments.sql
 -- ============================================================
 -- Stripe Checkout for comeback packs and paid single comebacks.
 
@@ -1574,7 +1571,7 @@ COMMENT ON TABLE public.payment_orders IS
   'Stripe Checkout orders. Credits and paid comebacks are applied only by webhook.';
 
 -- ============================================================
--- 016_audit_trigger_system_actions.sql
+-- 20260516000016_audit_trigger_system_actions.sql
 -- ============================================================
 -- Corrective migration for databases that already applied 001_initial_schema.
 -- Fresh installs get both fixes from the corrected 001 and do not need this file,
@@ -1630,7 +1627,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- 017_fix_users_policy_recursion.sql
+-- 20260516000017_fix_users_policy_recursion.sql
 -- ============================================================
 -- Corrective migration for databases that already applied 004_rls_policies.
 -- Fresh installs get this from the corrected 004; re-running here is harmless.
@@ -1660,7 +1657,7 @@ CREATE POLICY "Super admins can manage all users" ON public.users
     FOR ALL USING (public.current_user_role() = 'super_admin');
 
 -- ============================================================
--- 018_fix_properties_policy_recursion.sql
+-- 20260516000018_fix_properties_policy_recursion.sql
 -- ============================================================
 -- Corrective migration: breaks the two mutual-recursion cycles in the RLS graph.
 --
@@ -1713,7 +1710,7 @@ CREATE POLICY "Workers can view assigned properties" ON public.properties
     FOR SELECT USING (public.worker_has_property(id));
 
 -- ============================================================
--- 019_fix_violations_policy_performance.sql
+-- 20260516000019_fix_violations_policy_performance.sql
 -- ============================================================
 -- Corrective migration: `violations` was unreadable (57014 statement timeout).
 --
@@ -1752,7 +1749,7 @@ CREATE POLICY "Property managers can view violations for their properties" ON pu
     FOR SELECT USING (public.pm_owns_unit(unit_id));
 
 -- ============================================================
--- 020_security_audit_logs_and_owner_access.sql
+-- 20260516000020_security_audit_logs_and_owner_access.sql
 -- ============================================================
 -- 020 — security fix + owner-tier access.
 --
@@ -1891,7 +1888,7 @@ CREATE POLICY "Managers and admins insert notifications" ON public.notifications
     );
 
 -- ============================================================
--- 021_pm_property_access_via_user_properties.sql
+-- 20260516000021_pm_property_access_via_user_properties.sql
 -- ============================================================
 -- 021 - property managers could not see the properties they were assigned.
 --
@@ -1933,7 +1930,7 @@ CREATE POLICY "Property managers can view assigned properties" ON public.propert
     );
 
 -- ============================================================
--- 022_stop_completions_and_ops_access.sql
+-- 20260516000022_stop_completions_and_ops_access.sql
 -- ============================================================
 -- 022 - missing table + the last two role-access gaps.
 --
@@ -2042,7 +2039,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- 023_property_hierarchy_access.sql
+-- 20260516000023_property_hierarchy_access.sql
 -- ============================================================
 -- 023 - one consistent access rule for the property -> building -> floor -> unit tree.
 --
@@ -2119,7 +2116,7 @@ CREATE POLICY "Users can view units based on property access" ON public.units
     FOR SELECT USING (public.can_access_floor(floor_id));
 
 -- ============================================================
--- 024_function_hardening.sql
+-- 20260516000024_function_hardening.sql
 -- ============================================================
 -- 024 - function hardening (Supabase Security Advisor).
 --
@@ -2167,7 +2164,7 @@ GRANT EXECUTE ON FUNCTION public.register_staff_with_invite(uuid, uuid, text, te
 -- screens, so anon keeps EXECUTE. They return only whether a code is valid.
 
 -- ============================================================
--- 025_move_rls_helpers_to_private_schema.sql
+-- 20260516000025_move_rls_helpers_to_private_schema.sql
 -- ============================================================
 -- 025 - move the RLS helper functions out of the API-exposed schema.
 --
@@ -2324,4 +2321,372 @@ DROP FUNCTION IF EXISTS public.resident_has_property(uuid);
 DROP FUNCTION IF EXISTS public.is_staff_role(text);
 DROP FUNCTION IF EXISTS public.is_owner_admin();
 DROP FUNCTION IF EXISTS public.current_user_role();
+
+-- ============================================================
+-- 20260516000026_resident_units_immutability.sql
+-- ============================================================
+-- 026 - stop residents rewriting their own unit assignment and comeback balance.
+--
+-- 008 added:
+--     CREATE POLICY "Residents update own purchased comeback balance"
+--         ON public.resident_units FOR UPDATE TO authenticated
+--         USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+--
+-- That checks WHO owns the row but nothing about WHAT changes, and RLS cannot
+-- express per-column rules. Verified against the live API as a resident:
+--
+--   * PATCH purchased_comeback_balance = 9999  -> 204. Unlimited paid comebacks for
+--     free. payment_orders is commented "credits and paid comebacks are applied only
+--     by webhook", but the resident could simply set the number themselves, which
+--     bypasses Stripe entirely.
+--   * PATCH property_id = <the other property> -> 204. The resident relocated
+--     themselves, and because resident_has_property() drives the property/building/
+--     floor/unit policies, that hands them read access to a property they have no
+--     relationship with.
+--   * PATCH move_in_date -> 204. Affects billing occupancy.
+--
+-- RLS still governs row ownership; this trigger enforces the column rules on top.
+-- The owner tier and the Stripe webhook (service_role, auth.uid() IS NULL) are exempt,
+-- so admin assignment screens and credit top-ups keep working.
+
+CREATE OR REPLACE FUNCTION public.enforce_resident_unit_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    -- service_role / webhook / admin SQL: no end-user session, nothing to restrict.
+    IF auth.uid() IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    -- Owner tier manages assignments through the admin screens.
+    IF private.is_owner_admin() THEN
+        RETURN NEW;
+    END IF;
+
+    IF NEW.user_id      IS DISTINCT FROM OLD.user_id
+    OR NEW.unit_id      IS DISTINCT FROM OLD.unit_id
+    OR NEW.property_id  IS DISTINCT FROM OLD.property_id
+    OR NEW.move_in_date IS DISTINCT FROM OLD.move_in_date
+    OR NEW.is_active    IS DISTINCT FROM OLD.is_active THEN
+        RAISE EXCEPTION 'resident_units: unit assignment is not self-editable';
+    END IF;
+
+    -- Spending credits is fine; granting them is not.
+    IF NEW.purchased_comeback_balance > OLD.purchased_comeback_balance THEN
+        RAISE EXCEPTION 'resident_units: comeback credits are added only by the payment webhook';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS enforce_resident_unit_rules ON public.resident_units;
+CREATE TRIGGER enforce_resident_unit_rules
+    BEFORE UPDATE ON public.resident_units
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_resident_unit_rules();
+
+REVOKE ALL ON FUNCTION public.enforce_resident_unit_rules() FROM PUBLIC, anon, authenticated;
+
+-- Repair the rows the audit probes modified.
+UPDATE public.resident_units ru
+SET property_id = '10000000-0000-0000-0000-000000000001',
+    unit_id     = (SELECT u.id FROM public.units u
+                   JOIN public.floors f  ON f.id = u.floor_id
+                   JOIN public.buildings b ON b.id = f.building_id
+                   WHERE u.unit_number = '104'
+                     AND b.property_id = '10000000-0000-0000-0000-000000000001'
+                   LIMIT 1),
+    purchased_comeback_balance = 0,
+    move_in_date = CURRENT_DATE - 90,
+    updated_at = now()
+FROM public.users usr
+WHERE usr.id = ru.user_id AND usr.email = 'adam.grant824+res2@gmail.com';
+
+-- ============================================================
+-- 20260516000027_storage_policy_roles.sql
+-- ============================================================
+-- 027 - storage: let the owner tier and ops managers upload evidence photos.
+--
+-- 006's worker upload policy tested role IN ('driver','property_manager','super_admin').
+-- After 013 made `owner` the canonical business-owner role, and with
+-- operations_manager doing field work, both were locked out of the workers/ prefix.
+-- Same gap 020 fixed for the tables.
+--
+-- Path scheme is unchanged and is what the app now writes (see
+-- lib/core/storage/photo_storage.dart):
+--     users/<uid>/...    residents
+--     workers/<uid>/...  driver, property_manager, operations_manager, owner, super_admin
+
+DROP POLICY IF EXISTS "Workers upload violation photos" ON storage.objects;
+CREATE POLICY "Workers upload violation photos"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+    bucket_id = 'violations'
+    AND (storage.foldername(name))[1] = 'workers'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+    AND EXISTS (
+        SELECT 1 FROM public.users
+        WHERE id = auth.uid()
+          AND role IN ('driver', 'property_manager', 'operations_manager', 'owner', 'super_admin')
+    )
+);
+
+-- Owner tier needs to review any evidence photo, not just its own uploads.
+DROP POLICY IF EXISTS "Owner admins read all violation files" ON storage.objects;
+CREATE POLICY "Owner admins read all violation files"
+ON storage.objects FOR SELECT TO authenticated
+USING (bucket_id = 'violations' AND private.is_owner_admin());
+
+-- ============================================================
+-- 20260516000028_worker_resident_lookup.sql
+-- ============================================================
+-- 028 - workers could never file a violation.
+--
+-- violation_report_screen.dart resolves the resident of a unit before inserting:
+--
+--     select user_id from resident_units where unit_id = ? and is_active
+--     -> if null: "No active resident mapped to this unit."
+--
+-- No policy on resident_units covered the driver role (only the resident themselves,
+-- property managers, and super_admin), so that lookup returned NULL for every worker
+-- and the screen bailed out every time. Verified live: a worker resolving unit 104,
+-- which does have an active resident, got zero rows.
+--
+-- Reporting violations is core to the service, so a worker needs to see the resident
+-- mapping for the properties they are actually assigned to - and nothing beyond that.
+-- private.worker_has_property() is SECURITY DEFINER, so this does not re-enter the
+-- resident_units policies (see 018).
+
+DROP POLICY IF EXISTS "Workers view resident units for assigned properties" ON public.resident_units;
+CREATE POLICY "Workers view resident units for assigned properties"
+    ON public.resident_units FOR SELECT TO authenticated
+    USING (
+        private.current_user_role() = 'driver'
+        AND private.worker_has_property(property_id)
+    );
+
+-- Same lookup, same reason: the screen reads the most recent pickup for the unit to
+-- attach the violation to it.
+DROP POLICY IF EXISTS "Workers view pickups for assigned properties" ON public.pickups;
+CREATE POLICY "Workers view pickups for assigned properties"
+    ON public.pickups FOR SELECT TO authenticated
+    USING (
+        private.current_user_role() = 'driver'
+        AND EXISTS (
+            SELECT 1 FROM public.units u
+            JOIN public.floors f     ON f.id = u.floor_id
+            JOIN public.buildings b  ON b.id = f.building_id
+            WHERE u.id = pickups.unit_id
+              AND private.worker_has_property(b.property_id)
+        )
+    );
+
+-- ============================================================
+-- 20260516000029_pm_access_via_user_properties.sql
+-- ============================================================
+-- 029 - the property manager dashboard was blind on every operational table.
+--
+-- 021/023 fixed properties, buildings, floors and units. Ten more tables still
+-- identified a PM only by `properties.company_id = auth.uid()`, but the app assigns
+-- property managers through public.user_properties (admin_manager_assignments_screen
+-- upserts there; manager_dashboard_screen and property_manager_dashboard_new read
+-- from it). company_id is documented in that same screen as an OPTIONAL extra.
+--
+-- Verified live: a PM assigned to Sunset Gardens through user_properties saw
+-- resident_units = 0 and violations = 0 for their own property, which empties the
+-- compliance report, the alerts screen and the occupancy billing view.
+--
+-- These are additive SELECT policies - RLS policies are OR'd, so the existing
+-- company_id route keeps working for anyone set up that way. private.pm_has_property()
+-- is SECURITY DEFINER, so none of this re-enters the policy system (see 018).
+
+-- Direct property_id -------------------------------------------------------------
+DO $$
+DECLARE t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY[
+        'resident_units','worker_assignments','routes','nightly_runs',
+        'resident_monthly_usage','subscriptions','invoices'
+    ]
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'PM assigned via user_properties reads ' || t, t);
+        EXECUTE format(
+            'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated '
+            'USING (private.pm_has_property(property_id))',
+            'PM assigned via user_properties reads ' || t, t);
+    END LOOP;
+END $$;
+
+-- Reached through unit -> floor -> building -> property ---------------------------
+CREATE OR REPLACE FUNCTION private.pm_has_unit(target_unit uuid)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+AS $fn$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.units u
+        JOIN public.floors f    ON f.id = u.floor_id
+        JOIN public.buildings b ON b.id = f.building_id
+        WHERE u.id = target_unit
+          AND private.pm_has_property(b.property_id)
+    );
+$fn$;
+GRANT EXECUTE ON FUNCTION private.pm_has_unit(uuid) TO anon, authenticated, service_role;
+
+DROP POLICY IF EXISTS "PM assigned via user_properties reads pickups" ON public.pickups;
+CREATE POLICY "PM assigned via user_properties reads pickups"
+    ON public.pickups FOR SELECT TO authenticated
+    USING (private.pm_has_unit(unit_id));
+
+DROP POLICY IF EXISTS "PM assigned via user_properties reads violations" ON public.violations;
+CREATE POLICY "PM assigned via user_properties reads violations"
+    ON public.violations FOR SELECT TO authenticated
+    USING (private.pm_has_unit(unit_id));
+
+DROP POLICY IF EXISTS "PM assigned via user_properties reads route_stops" ON public.route_stops;
+CREATE POLICY "PM assigned via user_properties reads route_stops"
+    ON public.route_stops FOR SELECT TO authenticated
+    USING (private.pm_has_unit(unit_id));
+
+-- Reached through the parent pickup -----------------------------------------------
+DROP POLICY IF EXISTS "PM assigned via user_properties reads missed pickups" ON public.missed_pickup_requests;
+CREATE POLICY "PM assigned via user_properties reads missed pickups"
+    ON public.missed_pickup_requests FOR SELECT TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.pickups p
+            WHERE p.id = missed_pickup_requests.pickup_id
+              AND private.pm_has_unit(p.unit_id)
+        )
+    );
+
+-- ============================================================
+-- 20260516000030_pm_has_unit_role_guard.sql
+-- ============================================================
+-- 030 - performance: short-circuit private.pm_has_unit() for non-PMs.
+--
+-- Measured against the live API: a RESIDENT reading violations took 1.87s, while
+-- every other role/table combination sat at 0.30-0.57s. Not a missing index --
+-- idx_units_floor_id, idx_floors_building_id, idx_buildings_property_id and
+-- idx_violations_unit_id all exist.
+--
+-- The cause is pm_has_unit(), added in 029 without a role guard. RLS ORs every
+-- policy together, so a resident's read still evaluates the property-manager
+-- policies, and pm_has_unit() ran its four-table join (units -> floors -> buildings
+-- -> properties) for every candidate row before the inner pm_has_property() finally
+-- rejected them on role. pm_owns_unit() in 019 was written with the guard first and
+-- does not have this problem.
+--
+-- Hoisting the role test is provably semantics-preserving: pm_has_property(), which
+-- this function already calls inside the join, itself requires
+-- current_user_role() = 'property_manager'. Any caller that fails the new guard would
+-- have failed the inner one anyway -- it just fails before doing the join instead of
+-- after.
+
+CREATE OR REPLACE FUNCTION private.pm_has_unit(target_unit uuid)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+AS $fn$
+    SELECT private.current_user_role() = 'property_manager'
+       AND EXISTS (
+            SELECT 1
+            FROM public.units u
+            JOIN public.floors f    ON f.id = u.floor_id
+            JOIN public.buildings b ON b.id = f.building_id
+            WHERE u.id = target_unit
+              AND private.pm_has_property(b.property_id)
+       );
+$fn$;
+
+GRANT EXECUTE ON FUNCTION private.pm_has_unit(uuid) TO anon, authenticated, service_role;
+
+-- resident_has_property() is deliberately left unguarded. Guarding it on
+-- role = 'resident' would deny a worker who also LIVES at a property access to their
+-- own home unless they happened to be assigned to service it. It is a single indexed
+-- lookup on resident_units, so it is not the cost here anyway.
+
+-- Supports that lookup and the resident policies generally.
+CREATE INDEX IF NOT EXISTS idx_resident_units_user_property_active
+    ON public.resident_units(user_id, property_id) WHERE is_active = true;
+
+-- ============================================================
+-- 20260516000031_rls_initplan_optimization.sql
+-- ============================================================
+-- 031 - performance: evaluate auth.uid() once per query, not once per row.
+--
+-- Supabase's Performance Advisor reported 294 "Auth RLS Initialization Plan"
+-- warnings. When a policy calls auth.uid() bare, Postgres treats it as volatile per
+-- row and re-executes it for every candidate row. Wrapping it in a scalar subquery,
+-- `(SELECT auth.uid())`, turns it into an InitPlan evaluated once for the whole
+-- statement.
+--
+-- It is invisible on the demo data (56 units, 1 resident). It is the difference
+-- between a fast query and an unusable one at real scale -- a property with 10,000
+-- units means 10,000 redundant auth.uid() calls per read, per policy, and there are
+-- over 120 policies here.
+--
+-- Rewriting 100+ policies by hand would be its own bug source, so this rebuilds them
+-- programmatically from pg_policies -- the same approach 025 used to move helpers into
+-- the private schema. Only the auth.* call sites change; roles, commands, USING and
+-- WITH CHECK logic are otherwise reproduced verbatim.
+
+DO $$
+DECLARE
+    p             record;
+    new_qual      text;
+    new_check     text;
+    cmd_kw        text;
+    roles_list    text;
+    stmt          text;
+    touched       int := 0;
+BEGIN
+    FOR p IN
+        SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
+        FROM pg_policies
+        WHERE schemaname = 'public'
+          AND (
+                coalesce(qual, '')       ~ 'auth\.(uid|jwt|role)\(\)'
+             OR coalesce(with_check, '') ~ 'auth\.(uid|jwt|role)\(\)'
+          )
+    LOOP
+        -- Wrap only bare calls. A call already inside a subselect is left alone so
+        -- this migration stays idempotent.
+        new_qual  := regexp_replace(coalesce(p.qual, ''),
+                        '(?<!SELECT )auth\.(uid|jwt|role)\(\)', '(SELECT auth.\1())', 'g');
+        new_check := regexp_replace(coalesce(p.with_check, ''),
+                        '(?<!SELECT )auth\.(uid|jwt|role)\(\)', '(SELECT auth.\1())', 'g');
+
+        IF new_qual = coalesce(p.qual, '') AND new_check = coalesce(p.with_check, '') THEN
+            CONTINUE;
+        END IF;
+
+        cmd_kw := CASE upper(p.cmd)
+                    WHEN 'ALL'    THEN 'ALL'
+                    WHEN 'SELECT' THEN 'SELECT'
+                    WHEN 'INSERT' THEN 'INSERT'
+                    WHEN 'UPDATE' THEN 'UPDATE'
+                    WHEN 'DELETE' THEN 'DELETE'
+                  END;
+
+        roles_list := array_to_string(ARRAY(SELECT quote_ident(r) FROM unnest(p.roles) AS r), ', ');
+
+        EXECUTE format('DROP POLICY %I ON %I.%I', p.policyname, p.schemaname, p.tablename);
+
+        stmt := format('CREATE POLICY %I ON %I.%I AS %s FOR %s TO %s',
+                        p.policyname, p.schemaname, p.tablename,
+                        CASE WHEN p.permissive = 'PERMISSIVE' THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END,
+                        cmd_kw, roles_list);
+
+        IF nullif(new_qual, '')  IS NOT NULL THEN stmt := stmt || format(' USING (%s)', new_qual); END IF;
+        IF nullif(new_check, '') IS NOT NULL THEN stmt := stmt || format(' WITH CHECK (%s)', new_check); END IF;
+
+        EXECUTE stmt;
+        touched := touched + 1;
+    END LOOP;
+
+    RAISE NOTICE 'rewrote % policies to use InitPlan-style auth calls', touched;
+END $$;
 

@@ -1,7 +1,6 @@
--- PROVISION PART 1 of 4 — baseline schema
--- Run this first, alone. Creates enums, tables, indexes, triggers.
--- Source: migrations/001_initial_schema.sql (includes the audit_trigger +
--- audit_logs.user_id fixes; see migrations/016 for the same fix as a patch).
+-- PROVISION PART 1 of 4 - baseline schema
+-- Run first, alone. Creates enums, tables, indexes, triggers.
+-- Source: migrations/20260516000001_initial_schema.sql
 
 -- Relaxed Living Valet - Initial Database Schema
 -- This migration creates all tables for the valet trash operations system

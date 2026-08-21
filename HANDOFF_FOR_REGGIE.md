@@ -186,11 +186,18 @@ Anything that misbehaves — screenshot it and send it to Adam.
 
 ## Two smaller things (ask Adam, 5 minutes)
 
-- **Do NOT connect GitHub to the database yet.** This was on an earlier version of
-  this list and it was wrong — connecting it now would break things. The database
-  already has everything it needs; the connection is a convenience for *future*
-  updates, and setting it up safely takes real work (renaming 36 files and telling
-  Supabase what's already been applied). Adam has written down why. Leave it alone.
+- **Connect GitHub to the database.** This makes future updates automatic: when a
+  change is approved on GitHub, the database updates itself instead of someone typing
+  commands by hand. Adam has already done all the preparation — you just need to
+  authorize it:
+  1. Go to **https://supabase.com/dashboard/project/immiejqvnucndjspacwv/settings/integrations**
+  2. Under **GitHub**, click **Connect GitHub** and sign in.
+  3. When GitHub asks which organization to install into, choose
+     **relaxedlivingvalet** and grant access to the **valettrashmobile** repository.
+  4. Back in Supabase, pick that repository and set the production branch to **main**.
+
+  ✅ **Done when:** the Integrations page shows the repository name instead of a
+  Connect button. *(About 5 minutes. Ask Adam to confirm it took effect.)*
 - **The old Supabase project has security holes** that were fixed in the new one. If
   you're not using it any more, delete it. If you are, tell Adam so he can patch it.
 
