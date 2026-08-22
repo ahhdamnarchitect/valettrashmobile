@@ -1,0 +1,340 @@
+<title>Breezeway Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+
+<style>
+:root{
+  --ink:#0C1417; --surface:#F6F9F9; --raised:#FFFFFF; --line:#D2DEDE;
+  --text:#141D20; --dim:#586A6E; --faint:#84959A;
+  --accent:#0F6E75; --accent-soft:#DCEDEE;
+  --go:#2F7A55; --go-soft:#DEEDE4;
+  --stop:#B23A2E; --stop-soft:#F6DFDC;
+  --ground:#EDF2F2;
+  --shadow:0 1px 2px rgba(12,20,23,.07),0 4px 14px rgba(12,20,23,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#060A0C; --surface:#171F22; --raised:#1E282C; --line:#2C393D;
+    --text:#E4EDEE; --dim:#8FA2A7; --faint:#68797E;
+    --accent:#4FBEC4; --accent-soft:#12312F;
+    --go:#5CB98A; --go-soft:#16301F;
+    --stop:#E0685A; --stop-soft:#331917;
+    --ground:#0C1417;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#060A0C; --surface:#171F22; --raised:#1E282C; --line:#2C393D;
+  --text:#E4EDEE; --dim:#8FA2A7; --faint:#68797E;
+  --accent:#4FBEC4; --accent-soft:#12312F;
+  --go:#5CB98A; --go-soft:#16301F;
+  --stop:#E0685A; --stop-soft:#331917;
+  --ground:#0C1417;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--text);
+  font-family:Archivo,system-ui,-apple-system,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:14px 14px 96px}
+
+.mast{
+  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  padding:6px 2px 14px;border-bottom:2px solid var(--text);margin-bottom:16px;
+}
+.mast h1{
+  font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin:0;
+}
+.mast .sub{font-size:12px;color:var(--dim);letter-spacing:.04em}
+.mast .ver{
+  margin-left:auto;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);border:1px solid var(--accent);border-radius:2px;padding:2px 6px;
+}
+
+.filter{
+  width:100%;padding:11px 13px;margin-bottom:14px;
+  background:var(--raised);border:1px solid var(--line);border-radius:3px;
+  color:var(--text);font:500 15px Archivo,system-ui,sans-serif;
+}
+.filter::placeholder{color:var(--faint)}
+.filter:focus{outline:2px solid var(--accent);outline-offset:-1px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:8px}
+.tile{
+  display:flex;flex-direction:column;gap:5px;text-align:left;
+  background:var(--raised);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:3px;padding:11px 12px;cursor:pointer;color:var(--text);
+  font-family:inherit;min-height:76px;box-shadow:var(--shadow);
+  transition:border-color .12s,transform .12s;
+}
+.tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile .k{
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+  font-variant-numeric:tabular-nums;
+}
+.tile .t{font-size:14.5px;font-weight:600;line-height:1.25;text-wrap:balance}
+.tile .c{font-size:11px;color:var(--dim);line-height:1.3;margin-top:auto}
+.tile[data-kind="exit"]{border-left-color:var(--stop)}
+.tile[data-kind="close"]{border-left-color:var(--go)}
+
+.grouphead{
+  grid-column:1/-1;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);padding:14px 2px 2px;border-bottom:1px solid var(--line);margin-bottom:2px;
+}
+.grouphead:first-child{padding-top:0}
+
+.card{display:none}
+body.open .grid,body.open .filter,body.open .railnote{display:none}
+body.open .card{display:block}
+.cardhead{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.back{
+  flex:none;background:var(--raised);border:1px solid var(--line);border-radius:3px;
+  color:var(--text);font:600 13px Archivo,sans-serif;padding:9px 13px;cursor:pointer;
+}
+.back:hover{border-color:var(--accent);color:var(--accent)}
+.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cardhead h2{margin:0;font-size:22px;font-weight:700;line-height:1.15;text-wrap:balance}
+.cardhead .cue{font-size:12px;color:var(--dim);margin-top:4px;line-height:1.35}
+
+.say{
+  background:var(--raised);border:1px solid var(--line);border-left:3px solid var(--go);
+  border-radius:3px;padding:16px 18px;margin-bottom:9px;box-shadow:var(--shadow);
+}
+.say .lbl{
+  font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--go);
+  font-weight:600;margin-bottom:7px;
+}
+.say p{
+  margin:0;font-family:Newsreader,Georgia,serif;font-size:19.5px;line-height:1.45;
+  max-width:62ch;
+}
+.say p+p{margin-top:11px}
+.say em{font-style:italic;color:var(--dim)}
+
+.note{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  border-radius:3px;padding:12px 15px;margin-bottom:9px;font-size:13.5px;line-height:1.5;
+}
+.note b{color:var(--accent)}
+.warn{
+  border-left:3px solid var(--stop);background:var(--stop-soft);
+  border-radius:3px;padding:12px 15px;margin-bottom:9px;font-size:13.5px;line-height:1.5;
+}
+.warn b{color:var(--stop)}
+.beat{
+  font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+  text-align:center;padding:9px 0;font-weight:600;
+}
+
+.rail{
+  position:fixed;left:0;right:0;bottom:0;background:var(--ink);color:#E4EDEE;
+  border-top:2px solid var(--accent);z-index:10;
+}
+.rail .inner{
+  max-width:1120px;margin:0 auto;padding:9px 14px;
+  display:flex;gap:7px;overflow-x:auto;align-items:center;
+}
+.rail b{
+  flex:none;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);padding-right:5px;
+}
+.rail span{
+  flex:none;font-size:11.5px;padding:4px 9px;border:1px solid #2C393D;border-radius:2px;
+  white-space:nowrap;color:#C0CFD2;
+}
+.railnote{font-size:11.5px;color:var(--faint);text-align:center;padding:20px 0 4px;line-height:1.5}
+
+@media (max-width:560px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .cardhead h2{font-size:19px}
+  .say p{font-size:18px}
+  .say{padding:14px 15px}
+  .mast .ver{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="mast">
+    <h1>Breezeway Board</h1>
+    <span class="sub">Relaxed Living Valet · apartment communities · DFW</span>
+    <span class="ver">v1</span>
+  </div>
+
+  <input class="filter" id="q" placeholder="Type to filter — or press a number key" autocomplete="off">
+  <div class="grid" id="grid"></div>
+  <div class="railnote">
+    Tap a card. <b>Esc</b> goes back. Full script: <code>brain/sales/sales-script.md</code>
+  </div>
+
+  <div class="card" id="card"></div>
+</div>
+
+<div class="rail"><div class="inner">
+  <b>Always</b>
+  <span>Ask what THEY charge residents first</span>
+  <span>3 sentences, then stop</span>
+  <span>Lead with month-to-month</span>
+  <span>Cans are $40, not $20</span>
+  <span>Never claim a property you don't have</span>
+  <span>Win = the meeting or the expiry date</span>
+</div></div>
+
+<script>
+const CARDS = [
+ {g:"Open"},
+ {t:"Walk-in opener", c:"Leasing office, cold", cue:"Ask nothing but a name and a slot. One question does all the work.",
+  b:[["say","Say it","Morning — I'm Reggie, I own Relaxed Living Valet, we're local here in DFW. I'll be quick and then I'll get out of your way. We do doorstep trash pickup for apartment communities.||Do you all have valet trash here right now?"],
+     ["beat","","STOP. Their answer routes everything."],
+     ["note","","That question qualifies them, is easy to answer, and doesn't sound like a pitch. <b>No valet trash → your best case.</b> Has it → go fishing."]]},
+ {t:"Cold call opener", c:"Phone", cue:"Give them a binary to answer instead of a pitch to refuse.",
+  b:[["say","Say it","Hi, this is Reggie with Relaxed Living Valet — we're local, here in DFW. I'll be quick. We do doorstep trash pickup for apartment communities, and I'm calling the ones in [city] that either don't have it or aren't thrilled with who they've got.||Which one are you?"]]},
+ {t:"A leasing agent answers", c:"Not the buyer", cue:"Do NOT pitch. They can't buy. Get the manager's name and leave.",
+  b:[["say","Say it","Ah — you're probably not who I need, my fault. Quick one, though: do you all have valet trash here? …Got it. And who's your community manager? …And is she usually around mornings or afternoons? …Perfect. I'll leave you my card — tell her I'll swing back Tuesday."],
+     ["note","","<b>Then actually come back Tuesday.</b> Showing up when you said you would is the first proof you'll ever give them, and it costs nothing."]]},
+ {t:"\"Talk to our regional\"", c:"Authority block", cue:"True, not a brush-off. Never send them to relay your pitch.",
+  b:[["say","Say it","Makes sense — that's usually how it works. Two things then: what's their name, and would you put in a good word if I reach out?||And honestly, you're the one who'd deal with this day to day. If I could show you in ten minutes what your residents would actually see, would that help you when they ask you about it?"],
+     ["note","","Convert the on-site manager into your <b>internal advocate</b>. A champion inside beats a cold email to a regional every time."]]},
+
+ {g:"Qualify"},
+ {t:"The two questions", c:"Ask before you quote", cue:"Their margin IS the pitch. Quoting blind is how you lose on price.",
+  b:[["say","Ask both","How many units do you have here?||And what do you charge residents for valet trash — or what were you thinking of charging?"],
+     ["warn","","<b>Do not quote a price until question 2 is answered.</b> $35 resident charge → easy. $25 → thin, go 36-month or walk."],
+     ["say","If they don't know","No problem — most places around here run $25 to $35 a month. Somewhere in there is normal."],
+     ["say","Tier 2 only — the third question","Who's doing it for you now, and when's that contract up?"],
+     ["note","","<b>The expiry date is the most valuable thing you can leave with.</b> Most managers miss their own 30-to-90-day notice window and roll into another year. Be the guy who calls sixty days before."]]},
+ {t:"They have NO valet trash", c:"Tier 1 — best case", cue:"Not a vendor fight. Money they aren't making. Don't mention competitors.",
+  b:[["say","Frame it","So right now that's just revenue you're not collecting. Most properties your size charge residents thirty a month for this, keep the difference over what they pay me, and it drops straight to the bottom line.||On [X] units that's real money — and residents actually like it, which is rare for anything you add to a ledger."],
+     ["say","Then the math, once, on their numbers","Say you charge thirty. [X] doors is $[X × 30] a month coming in. You'd pay me eighteen a door — $[X × 18]. You'd keep about $[difference] a month you're not making today."],
+     ["beat","","STOP TALKING. Let it sit."],
+     ["say","Then the second reason","The other half is your breezeways. Right now your residents are hauling bags to the compactor — or not, and leaving them by the door. Your maintenance guys are picking up what doesn't make it."]]},
+ {t:"They already have it", c:"Go fishing", cue:"Don't attack the incumbent. Ask questions and let THEM say it.",
+  b:[["say","Ask, don't tell","How's that going for you? …Do they show up every night they're supposed to? …When something goes wrong, how fast do you hear back from them?||And when a resident's mad about it, who do they come to — you, or them?"],
+     ["beat","","That last question is the one. The answer is almost always \"me.\""],
+     ["say","Then land it","That's the part that always gets me. You're paying somebody, and you're still the one absorbing it when it goes sideways."],
+     ["say","If they're genuinely happy — get the date and go","Good, that's how it should be. Do me one favor — when's that contract up? …I'll check back about sixty days out. Not to pester you, just so you've got a second number at renewal. Here's my card."]]},
+
+ {g:"They push back"},
+ {t:"\"How much is it?\"", c:"Price, early", cue:"Give the number straight, then pivot to THEIR margin.",
+  b:[["say","Say it","Eighteen a door, month to month. Fifteen if you lock thirty-six months.||But before that lands as high or low — what are you charging residents? That's the number that decides whether this is worth doing at all."]]},
+ {t:"\"That's higher than [national]\"", c:"Price resistance", cue:"You ARE the premium option. Hold it. Never discount on the spot.",
+  b:[["say","Say it","It probably is. They're cheaper because they're running contractors and a call center in another state, and you're the one who eats it when your residents are mad.||You're paying me a few dollars a door to not deal with that — and month to month, so if I'm wrong you're out in thirty days."],
+     ["note","","At ~$11/door a national gives a 180-door property about <b>$1,200/mo more margin</b> than you do. That gap is what the whole pitch exists to justify."]]},
+ {t:"\"We're under contract\"", c:"The most common no", cue:"Don't fight it. Take the date and own the renewal.",
+  b:[["say","Say it","Figured you might be. When's it up? …And do you know your notice window — a lot of these auto-renew if you miss it by thirty days. I'll check back sixty days out, that's all."]]},
+ {t:"\"How many properties\ndo you have?\"", c:"= Why should I risk you", cue:"FEAR question. The honest answer is stronger than anything you'd invent.",
+  b:[["say","Say it","I'll be straight with you — you'd be one of my first. That's exactly why I'm offering month to month with no cancellation fee, and why you get my cell instead of a 1-800 number.||A year from now I won't be able to give you that deal."],
+     ["beat","","STOP. Do not list features to compensate."],
+     ["warn","","<b>Never invent a reference.</b> It ends you the first time somebody asks to call them."]]},
+ {t:"\"Residents will complain\nabout another fee\"", c:"Fee politics", cue:"Concede a little. Offer the softer rollout.",
+  b:[["say","Say it","Some will, at first — same as any amenity. The ones who use it stop complaining fast, because the alternative is walking a bag across the property at ten at night.||And I'd rather you put it on new leases at renewal than force it on everybody mid-lease."]]},
+ {t:"\"We tried it before —\nit was a disaster\"", c:"Category damage", cue:"Concede immediately. Find out what actually broke.",
+  b:[["say","Say it","Then it was a bad company and you were right to kill it. What actually went wrong — was it missed nights, or trash sitting out?||…Yeah. That's the exact thing the nightly log is for; you'd see a miss the next morning instead of hearing it from a resident three days later."]]},
+ {t:"\"Not interested\" / \"Email me\"", c:"Brush-off", cue:"Don't fold, don't push. Take the one thing that's still available.",
+  b:[["say","Say it","Fair enough. Can I leave a card and get your name at least?||And one question before I go — do you all have valet trash here now? …Appreciate it. I'll follow up in a couple months."]]},
+ {t:"\"Who pays for a wrecked can?\"", c:"Equipment", cue:"$40. It's in the contract. Don't soften it.",
+  b:[["say","Say it","Forty dollars, and it goes on your invoice — you'd collect it from the resident the same way you'd handle any damage. Normal wear and tear is on me, and if my guy breaks it, that's mine."],
+     ["warn","","<b>Never say $20.</b> Both contracts say $40, and a manager will catch the mismatch when legal reads it."]]},
+ {t:"\"What about recycling?\"", c:"Add-on", cue:"Yes — but the 2-year minimum is part of the answer, not a surprise later.",
+  b:[["say","Say it","I can do it — two bins per unit, seven dollars a door on top. Only thing is I need a two-year commitment on the recycling side, because that's a second set of containers and a second stop."]]},
+ {t:"\"What if you get sick?\"", c:"One-man-band worry", cue:"Point at the contract, not at your promise.",
+  b:[["say","Say it","It's not just me — my people are W-2 employees, not me subcontracting it out, and that's the point.||But I'd rather you hold me to the contract than my promise: missing nights is a default in there, you give me fifteen days to fix it, and if I don't, you're out."]]},
+
+ {g:"Competence checks"},
+ {t:"Operational questions", c:"Compactor · weather · software", cue:"They're INTERESTED. Answer plainly. When it's no, say no.",
+  b:[["say","\"What time do your guys come?\"","Evenings we're running roughly six to ten, mornings we start early and we're done before most people leave for work. We'd set the exact window with you and tell your residents in writing."],
+     ["say","\"What if a resident doesn't put their can out?\"","Nothing happens — we're not knocking. If they put out loose trash or something that doesn't belong, my guy photographs it and it shows up in your log instead of me arguing with your resident."],
+     ["say","\"What if my compactor is full?\"","Then we can't run that night — it's in the contract. You tell me it's emptied and we're back the next scheduled pickup. I'm not going to leave a pile next to a full compactor and call that service."],
+     ["say","\"What happens in an ice storm?\"","We don't run in bad weather, and that's written in. I'm not putting my guys on your stairs in ice. You'd hear from me that night, not the next morning."],
+     ["say","\"Does this feed into Yardi / RealPage / Entrata?\"","No, and I won't tell you otherwise. You get an invoice and a per-unit backup file every month that ties out to your rent roll. If re-keying that is a dealbreaker, tell me now and I'll save us both the time."],
+     ["warn","","<b>Never bluff the integration.</b> We're not eligible to build one. Bluffing it to a manager who's been burned makes you the last vendor."],
+     ["say","\"Who do my residents call?\"","They can request a comeback right in the app themselves, which is most of it. Anything past that comes to me, not to your office. That's kind of the whole point."],
+     ["say","\"Who cleans cans on a move-out?\"","That one's on you in the contract — your turn crew handles the container the same as the unit. I replace them when they're actually worn out."],
+     ["say","\"Are you insured?\"","One million per occurrence, two million aggregate, plus workers comp on every employee. I'll send the certificate today and we'll get you named on it."],
+     ["say","\"How fast could you start?\"","Realistically two to three weeks — containers have to be ordered and staged, and I'd rather stage them right than start late on night one."],
+     ["say","\"How many properties can you handle?\"","I'm being deliberate about that. I'd rather run four properties perfectly than twelve badly, and the month-to-month means I have to. If I couldn't staff you properly I'd tell you no."],
+     ["warn","","<b>Never say \"as many as you want.\"</b> Overpromising capacity and then missing nights on property #1 is how this business dies in month three."]]},
+
+ {g:"Close"},
+ {t:"The proof", c:"Two things, not five", kind:"close", cue:"Only after they've engaged. Then STOP.",
+  b:[["say","Say it","Two things. One — my guys are W-2 employees on my payroll and my workers comp, not contractors off an app.||Two — you get a log every night with timestamps showing exactly what got picked up and what didn't, and you can export it. Most companies send you a summary once a month, if that."],
+     ["beat","","STOP. Do not open the app unless they ask."],
+     ["note","","<b>If they ask to see it</b> — that's a buying signal. Show: the nightly run log with timestamps and completion %, photo evidence of a violation, and what the resident sees including self-serve comeback requests."]]},
+ {t:"The month-to-month", c:"Your whole weapon", kind:"close", cue:"No national will match this. It answers every version of \"you're new.\"",
+  b:[["say","Say it","Here's how I'd do it. Month to month — thirty days notice, any reason, no fee. Every other company is going to hand you a three-year contract with a cancellation penalty in it.||I'd rather earn the three years than trap you into them. If we miss nights, you fire me and you're out nothing."],
+     ["beat","","STOP TALKING. Let it sit."],
+     ["say","Only if they want the better rate","If you want to lock a rate, I'll do fifteen a door on thirty-six months instead of eighteen. But I'd honestly start month to month and let me prove it first. Do it backwards and you're just taking my word for it, same as the last guy."],
+     ["note","","Offering the discount you could have led with — then talking them toward the safer option — is <b>the most trust you'll build in the whole conversation.</b> Do it."]]},
+ {t:"Lock it and leave", c:"Where you fall apart", kind:"close", cue:"The second they give a name or a date, STOP SELLING.",
+  b:[["say","After a good walk-in","Perfect. I'll come back Thursday at ten with numbers for your unit count and you can tell me if it's worth taking to your regional. Thursday at ten work? …Great. What's the best email for you?"],
+     ["say","After getting an expiry date","Got it — March. I'll check in with you in January, about sixty days out, so you've got a second option in front of you before it renews. That's all I want. Take care."],
+     ["say","After a yes","Great — I'll get you a contract and a certificate of insurance today. I need your unit count and the name it goes in. Give me two weeks to get containers on site and we can start [date]."],
+     ["note","","Send the COI and contract <b>the same day</b>. That's the first promise you keep."]]},
+
+ {g:"Exits"},
+ {t:"Not a fit — disqualify", c:"This is a WIN", kind:"exit", cue:"Log as revisit, not lost. They remember who told them the truth.",
+  b:[["say","Managed by a national","Ah — then you're probably locked into whoever they've got nationally, and I'd just be wasting your afternoon. If that ever changes, here's my card."],
+     ["say","Under 100 units","Honestly, at that size the route doesn't work for me and I'd end up cutting corners on you. I'd rather tell you that than take the contract and do it badly."],
+     ["say","They charge $25 and want a price fight","At twenty-five you'd only be keeping seven a door with me, and there are guys who'll do it cheaper than I will. If what you want is the lowest number, that's not me — and I'd rather say so than waste your time."],
+     ["note","","Small properties grow, managers change companies, and national agreements get renegotiated. The manager who remembers you were honest is the one who calls you from their next property."]]},
+ {t:"Never say", c:"Compliance / brand", kind:"exit", cue:"",
+  b:[["warn","","<b>Any property count or reference.</b> You have none. The honest answer is stronger — and inventing one ends you the first time somebody asks to call them."],
+     ["warn","","<b>\"$20 for a lost can.\"</b> It's $40. That's what the contract says."],
+     ["warn","","<b>Yardi / RealPage / Entrata integration.</b> We're not eligible to build one."],
+     ["warn","","<b>\"As many units as you want.\"</b> With W-2 staff, hiring is the constraint."],
+     ["warn","","<b>Service during inclement weather</b> or on a listed holiday."],
+     ["warn","","<b>Any guaranteed NOI, retention, or satisfaction number.</b>"],
+     ["warn","","<b>Badmouthing the incumbent by name.</b> When you say it you're a salesman; when they say it, it's a fact they own."],
+     ["warn","","<b>Pitching the leasing agent as the buyer.</b> Get the manager's name and come back."],
+     ["warn","","<b>A feature monologue.</b> Ever. Two things, then stop."]]},
+];
+
+const grid=document.getElementById('grid'), card=document.getElementById('card'), q=document.getElementById('q');
+const items=CARDS.filter(c=>!c.g);
+
+function render(filter=""){
+  grid.innerHTML=""; const f=filter.toLowerCase(); let n=0;
+  CARDS.forEach(c=>{
+    if(c.g){ if(!f){const h=document.createElement('div');h.className='grouphead';h.textContent=c.g;grid.appendChild(h);} return; }
+    const hay=(c.t+" "+c.c+" "+(c.cue||"")+" "+JSON.stringify(c.b)).toLowerCase();
+    if(f && !hay.includes(f)) return;
+    n++; const i=items.indexOf(c);
+    const b=document.createElement('button');
+    b.className='tile'; if(c.kind)b.dataset.kind=c.kind;
+    b.innerHTML=`<span class="k">${String(i+1).padStart(2,'0')}</span><span class="t"></span><span class="c"></span>`;
+    b.querySelector('.t').textContent=c.t; b.querySelector('.c').textContent=c.c;
+    b.onclick=()=>open_(i); grid.appendChild(b);
+  });
+  if(!n){const e=document.createElement('div');e.className='grouphead';e.textContent='Nothing matches — Esc to clear';grid.appendChild(e);}
+}
+
+function open_(i){
+  const c=items[i]; if(!c) return;
+  let h=`<div class="cardhead"><button class="back" id="bk">← Back</button><div><h2></h2>${c.cue?`<div class="cue"></div>`:``}</div></div>`;
+  c.b.forEach(([kind,lbl,txt])=>{
+    if(kind==="say"){
+      const ps=txt.split("||").map(t=>`<p>${t}</p>`).join("");
+      h+=`<div class="say">${lbl?`<div class="lbl">${lbl}</div>`:``}${ps}</div>`;
+    } else if(kind==="beat"){ h+=`<div class="beat">${txt}</div>`; }
+    else { h+=`<div class="${kind}">${txt}</div>`; }
+  });
+  card.innerHTML=h;
+  card.querySelector('h2').textContent=c.t;
+  if(c.cue) card.querySelector('.cue').textContent=c.cue;
+  document.getElementById('bk').onclick=close_;
+  document.body.classList.add('open'); window.scrollTo(0,0);
+}
+function close_(){document.body.classList.remove('open');window.scrollTo(0,0);q.focus({preventScroll:true});}
+
+q.addEventListener('input',e=>render(e.target.value));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ if(document.body.classList.contains('open'))close_(); else {q.value="";render();} return; }
+  if(document.body.classList.contains('open')) return;
+  if(document.activeElement===q && q.value!=="") return;
+  if(/^[1-9]$/.test(e.key)){ const i=parseInt(e.key,10)-1; if(items[i]){e.preventDefault();open_(i);} }
+});
+render();
+</script>

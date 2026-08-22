@@ -4,7 +4,7 @@
 **Repo:** https://github.com/relaxedlivingvalet/valettrashmobile (`main`)  
 **Local path:** `C:\Users\WeLovePQ\Desktop\CascadeProjects\windsurf-project`  
 **App (dev):** http://localhost:8091 (PC only; iPad same Wi-Fi → `http://<PC-IPv4>:8091`)  
-**Marketing site:** https://relaxlivingvalet.com (not the Flutter app)  
+**Marketing site:** https://relaxedlivingvalet.com (not the Flutter app)  
 
 Copy this whole file into a new Claude or ChatGPT chat to resume work. Prefer also reading live brain files in the repo when coding in Cursor.
 
@@ -146,7 +146,7 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 
 - **LLC:** done
 - **Bank account:** needed (for Stripe)
-- **Privacy Policy / Terms public URLs:** still needed on https://relaxlivingvalet.com
+- **Privacy Policy / Terms public URLs:** still needed on https://relaxedlivingvalet.com
 - **Insurance / property contracts:** recommended before real signed complexes
 - **Demo readiness:** web demos now; iPad Safari via LAN IP; TestFlight needs Mac
 - **Production/store:** blocked on RLS apply, Privacy/Terms, Stripe secrets, Mac IPA
@@ -158,7 +158,7 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 ### For apartment demos (this month)
 1. Rehearse all roles on localhost:8091; iPad = same Wi-Fi + PC LAN IP (not localhost, not the marketing site)
 2. Polish one demo property (doors, rates, invite codes)
-3. Publish Privacy + Terms on https://relaxlivingvalet.com
+3. Publish Privacy + Terms on https://relaxedlivingvalet.com
 4. Paste Stripe test secrets + webhook (`brain/stripe_setup.md`); existing Stripe account is not auto-linked
 5. Apply migrations 012→014 + RLS smoke test (Advisor currently flags RLS off)
 6. For a downloadable iPad app: Apple Developer + Mac + Xcode → TestFlight (Windows cannot build IPA)
@@ -182,7 +182,7 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 - Stripe Checkout/webhook deployed; **secrets not set**; Financials read DB rows; Connect not live
 - Worker location / CSV export use **web** (`dart:html`) paths
 - `supabase_flutter` still on v1
-- Auth Site URL still localhost-oriented; marketing site is relaxlivingvalet.com
+- Auth Site URL still localhost-oriented; marketing site is relaxedlivingvalet.com
 - Never commit secrets; rotate if exposed
 
 ---

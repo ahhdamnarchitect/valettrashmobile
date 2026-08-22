@@ -117,7 +117,7 @@ arrive.
 **Recommended: Resend** — free for 3,000 emails/month, which is plenty to start.
 
 1. Go to **https://resend.com** and sign up.
-2. Click **Domains** → **Add Domain** → enter `relaxlivingvalet.com`.
+2. Click **Domains** → **Add Domain** → enter `relaxedlivingvalet.com`.
 3. Resend shows you a few DNS records. These go wherever you bought the domain
    (GoDaddy, Namecheap, etc.), under "DNS settings".
    **This is the fiddly bit — if you're unsure, send Adam a screenshot of the records
@@ -132,7 +132,7 @@ arrive.
    | Port | `465` |
    | Username | `resend` |
    | Password | the API key from step 4 |
-   | Sender email | `noreply@relaxlivingvalet.com` |
+   | Sender email | `noreply@relaxedlivingvalet.com` |
    | Sender name | `Relaxed Living Valet` |
 
 7. Click **Save**.

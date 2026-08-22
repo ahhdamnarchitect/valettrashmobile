@@ -45,7 +45,7 @@ Test logins: `brain/test_credentials.md`
 
 ## Assumptions / Unknowns
 - Stripe Connect contractor payouts not implemented yet; resident Checkout is wired pending secrets
-- Marketing site: **https://relaxlivingvalet.com** (not the Flutter app)
+- Marketing site: **https://relaxedlivingvalet.com** (not the Flutter app)
 - iOS builds require a Mac; in-person install = TestFlight; Windows demo = Flutter web localhost or LAN IP
 - OneSignal push tokens not collected or stored yet
 - Admin dashboard (`admin_dashboard/`) is scaffolded but not validated against current DB schema

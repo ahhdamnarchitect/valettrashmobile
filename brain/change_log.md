@@ -5,6 +5,76 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-08-21 — Sales assets built (`brain/sales/`); pricing model answered
+
+- **Pricing model resolved.** Reggie confirmed: **the property pays RLV, the property bills its
+  residents.** His rate is **$15–18/door/month**; residents pay **$25–35**, property keeps the
+  spread. This unblocked the sales-asset build and the billing export.
+  🔴 **The app still defaults `monthly_fee_per_door` to `25.00`** — now known to be wrong by $7–10
+  a door. Needs a migration. **Files:** `brain/sales/offer.md`, `brain/current_state.md`.
+
+- **Built `brain/sales/`** — the selling side of the project, ported from the proven
+  `journeyman/ops/outreach/` assets (formerly `home-services-growth`):
+  - **`offer.md`** — source of truth: pricing, ICP, service spec, contract structure, compliance
+    kit, open items. All other sales files derive from it.
+  - **`sales-script.md`** — two spines (leasing-office walk-in + cold call), the two qualifying
+    questions, discovery branched by prospect state, objection cheat sheet, operational competence
+    checks, honest disqualify, NEVER SAY.
+  - **`pitch-practice.md`** + **`roleplay-project-instructions.txt`** — ChatGPT-voice roleplay
+    partner with dice-rolled prospect scenarios (four personas incl. a leasing agent who *cannot
+    buy* and a preferred-vendor disqualify), plus COACH/SCORE.
+  - **`call-card.html`** — "Breezeway Board", the tap-through card. Verified in both themes and at
+    mobile width. Published: https://claude.ai/code/artifact/28c6c84e-9b85-4917-ae6b-0630a31f1596
+
+- **Read both contract templates** (month-to-month and 36-month) and encoded their real terms into
+  the offer and script. Key finding: **the month-to-month — 30-day out, either party, no
+  liquidated damages — is the strongest asset in the whole offer**, because no national competitor
+  will match it and it directly answers "you're new, why would I risk my property on you."
+
+- **Discrepancies caught between what Reggie said and what the contracts say.** Reggie confirmed
+  resolutions for all four: **cans are $40, not $20** (contracts win); **Juneteenth** and an
+  **inclement-weather clause** are being added to the contracts (currently in neither); and
+  **additional-insured** language is being added (§12/§13 currently promise only a COI on request,
+  which most management companies will not accept).
+
+- **Still open** — tracked in `brain/sales/offer.md`: the $18/$15 split is *Adam's recommendation,
+  not Reggie's confirmed number*; contract **Schedules 1–4 do not exist** (services, rates,
+  acceptable and excluded waste — he cannot hand over a complete contract yet); the 36-month
+  template references the rate schedule as **Schedule 4 in §8 and Schedule 1 in §10**; and Reggie's
+  **real 30-day capacity ceiling** is unknown ("as many as possible" is not a number the script
+  will repeat).
+
+### 2026-08-21 — Marketing domain typo corrected; PM-software integration ruled out
+
+- **Fixed a wrong marketing domain in 16 places across 8 files.** Every doc said
+  **`relaxlivingvalet.com`** — that domain does not resolve (NXDOMAIN). The live site is
+  **`relaxedlivingvalet.com`** (Vercel, DFW valet trash, phone 817-239-0269).
+  This was not cosmetic: `HANDOFF_FOR_REGGIE.md` Step 3 instructed Reggie to add
+  `relaxlivingvalet.com` to Resend and set the SMTP sender to `noreply@relaxlivingvalet.com` —
+  he would have been verifying a domain he does not own, and **password-reset email would never
+  have worked**. **Files:** `HANDOFF_FOR_REGGIE.md`, `brain/project_context.md`,
+  `brain/current_state.md`, `brain/test_credentials.md`, `brain/go_live_checklist.md`,
+  `brain/handoff_for_external_ai.md`, `brain/decisions.md`, `brain/change_log.md`.
+
+- **Yardi / RealPage / Entrata integration ruled out — ineligible, not merely expensive.** Yardi's
+  Standard Interface Partner Program gates all API access behind **2 years in business + 3 active
+  Voyager clients**, then ~**$25K/interface/year**; RealPage certifies every AppPartner and
+  Registered Vendor; Entrata is partner-gated. Full reasoning and the honest sales answer:
+  `brain/decisions.md` (2026-08-21). The substitute deliverable — a monthly property invoice plus a
+  per-unit backup file, and a nullable `external_ref` to carry the property's own unit/tenant codes —
+  is **on hold** pending the pricing-model question below. **Files:** `brain/decisions.md`.
+
+- **Pricing model flagged as a blocking open question.** Market rate is **$8–15/door/month paid by
+  the property**, with **residents charged $25–35**; the property's whole business case is that
+  spread. Our schema defaults `monthly_fee_per_door` to **$25.00** and `current_state.md` defines the
+  PM contract as billable doors × that fee — i.e. 2–3× market billed to the property, with their
+  profit erased. Awaiting Reggie's answer. **Files:** `brain/decisions.md`.
+
+- **Context:** this session was research toward porting the `home-services-growth` sales assets
+  (call script, ChatGPT-voice roleplay prompt, and the clickable "Dispatch Board" call card) to
+  Relaxed Living Valet. Those assets are **not built yet** — they are blocked on the pricing answer.
+
+
 ### 2026-08-19 — Pulled 25 commits; repo hygiene; switched to dedicated Supabase project
 
 - **Pulled `origin/main`** (fast-forward, `f46aaef` → `33c268b`, 25 commits). Resolves the fork-sync
@@ -152,7 +222,7 @@ Date | Change | Files Modified | Reason
 
 ### 2026-08-18 — Brain: site, iPad demo, TestFlight, RLS advisor
 
-- Marketing site **https://relaxlivingvalet.com** is live (not the Flutter app).
+- Marketing site **https://relaxedlivingvalet.com** is live (not the Flutter app).
 - iPad cannot use `localhost:8091`; same-Wi-Fi LAN IP until TestFlight.
 - In-person install path: Apple Developer + Mac + Xcode → TestFlight (not public App Store first). Windows cannot build iOS.
 - Hosted Advisor: RLS still **off** on core tables; 012–014 not applied. Stripe functions deployed; secrets still owner action.
@@ -160,7 +230,7 @@ Date | Change | Files Modified | Reason
 
 ### 2026-08-14 — Marketing site live
 
-- Public site: **https://relaxlivingvalet.com**
+- Public site: **https://relaxedlivingvalet.com**
 - App is still Flutter web on `localhost:8091` (PC only). iPad demo needs same Wi-Fi + computer LAN IP, or a hosted web build. Site is marketing, not the Flutter app.
 
 ### 2026-08-13 — Stripe Checkout for packs and paid comebacks

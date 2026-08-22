@@ -18,7 +18,7 @@ integration re-link, custom SMTP. See `brain/next_steps.md`. Master plan:
 ## Resume Here (next session)
 **Ordered playbook (do in sequence):**
 
-1. **Legal / business** — LLC done; marketing site **https://relaxlivingvalet.com** live; still need Privacy/Terms pages on that site, bank (Stripe live), insurance, property/worker agreements.
+1. **Legal / business** — LLC done; marketing site **https://relaxedlivingvalet.com** live; still need Privacy/Terms pages on that site, bank (Stripe live), insurance, property/worker agreements.
 2. **Apply migrations `012` → `013` → `014`** on hosted Supabase (Advisor shows RLS off on core tables until 014). Then run `supabase/tests/rls_role_smoke.sql`.
 3. **Stripe secrets** — owner must paste `STRIPE_SECRET_KEY` + webhook `whsec_` into Edge Function secrets (`brain/stripe_setup.md`). Existing Stripe account is **not** auto-linked.
 4. **In-person iPad demo (no Mac yet):** same Wi-Fi as PC → Safari `http://<PC-LAN-IP>:8091`. `localhost:8091` only works on the PC. Marketing site is **not** the Flutter app.
@@ -29,6 +29,44 @@ integration re-link, custom SMTP. See `brain/next_steps.md`. Master plan:
 
 Blockers: hosted 012–014 not applied (Advisor: ~24 RLS-off issues); Stripe secrets/webhook still owner action; no Mac for TestFlight; Privacy/Terms not published yet; business bank for Stripe live.
 
+### 💰 Pricing model — ANSWERED 2026-08-21 (and the app disagrees with it)
+
+Reggie confirmed the model: **the property pays Relaxed Living Valet, and the property bills its
+residents.** His rate is **$15–18/door/month**; residents are charged **$25–35** by the property,
+which keeps the spread. Full offer terms: **`brain/sales/offer.md`**.
+
+> 🔴 **The app still says $25.** `properties.monthly_fee_per_door` defaults to **`25.00`**
+> (`20260516000010_property_billing_metrics.sql`), and this file defines "PM contract estimate =
+> billable doors × `monthly_fee_per_door`". That default is now known to be **wrong by $7–10 a
+> door** — it would quote every new property well above what Reggie actually sells. **Needs a
+> migration to change the default, and any existing property rows checked.** Not done yet.
+
+Two smaller items the answer surfaced, both unresolved:
+- **`minimum_billable_occupancy_percent` (default 0.85)** appears in the app but in **neither
+  contract template**. Is he charging it? A property manager will ask.
+- The **monthly billing export** (property invoice + per-unit backup file, plus a nullable
+  `external_ref` to carry the property's own unit/tenant codes) is now unblocked but **not built**.
+
+**Ruled out 2026-08-21:** Yardi / RealPage / Entrata integrations — we are *ineligible*, not just
+priced out (Yardi needs 2 years in business + 3 active Voyager clients before API access exists).
+The honest sales answer and the substitute deliverable are in `decisions.md`.
+
+### 📇 Sales assets — BUILT 2026-08-21
+
+`brain/sales/` now exists and is the selling side of this project:
+
+| File | What it is |
+|---|---|
+| **`offer.md`** | Source of truth — pricing, ICP, service spec, contract structure, compliance kit, open items. **Change a number here first, then propagate.** |
+| **`sales-script.md`** | Two spines (leasing-office walk-in + cold call), qualifying questions, objections, competence checks, disqualify |
+| **`pitch-practice.md`** | Roleplay prompt — dice-rolled prospect scenarios, COACH/SCORE |
+| **`roleplay-project-instructions.txt`** | Condensed paste-in version for ChatGPT voice |
+| **`call-card.html`** | "Breezeway Board" — tap-through card for use in a parking lot. Published: https://claude.ai/code/artifact/28c6c84e-9b85-4917-ae6b-0630a31f1596 |
+
+⚠️ The script quotes **$18/door month-to-month, $15/door on 36 months**. Reggie gave a *range*
+($15–18); **the split is Adam's recommendation and is not yet confirmed by Reggie** — see the
+flagged assumption at the top of `offer.md`.
+
 ## Run the App
 ```powershell
 cd C:\Users\WeLovePQ\Desktop\CascadeProjects\windsurf-project\mobile
@@ -36,7 +74,7 @@ flutter pub get
 flutter run -d web-server --web-port 8091 --no-pub
 ```
 
-App: **http://localhost:8091** (this PC only). iPad on same Wi-Fi: `http://<this-PC-IPv4>:8091`. Marketing: **https://relaxlivingvalet.com**.
+App: **http://localhost:8091** (this PC only). iPad on same Wi-Fi: `http://<this-PC-IPv4>:8091`. Marketing: **https://relaxedlivingvalet.com**.
 
 ---
 

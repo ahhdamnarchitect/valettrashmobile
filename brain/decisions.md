@@ -66,7 +66,7 @@
 
 ### 2026-08-18
 - **Decision**: In-person apartment demos use **TestFlight** after a Mac IPA build; until then, iPad Safari on the PC’s LAN IP. Do not treat the marketing site as the app.
-- **Reason**: Apple requires macOS/Xcode; `localhost` only works on the machine running Flutter; relaxlivingvalet.com is marketing.
+- **Reason**: Apple requires macOS/Xcode; `localhost` only works on the machine running Flutter; relaxedlivingvalet.com is marketing.
 - **Impact**: Owner needs Apple Developer + Mac; Privacy/Terms on the site before store review.
 
 ### 2026-08-13
@@ -122,3 +122,44 @@
 - **Reason**: Single Flutter codebase serves four distinct user types. Simpler than separate builds.
 - **Alternatives Considered**: Separate apps per role — rejected as overkill for Phase 1.
 - **Impact**: All roles share one app binary. Any role confusion would be caught at the `users.role` query.
+
+### 2026-08-21
+- **Decision**: **Do not build Yardi / RealPage / Entrata integrations.** Not deferred on effort —
+  Relaxed Living Valet is **categorically ineligible** today. Yardi's Standard Interface Partner
+  Program requires the vendor company to be **2 years old** with **3+ active Voyager clients**
+  before API docs, a WSDL, or sandbox access are released at all, then charges a per-interface
+  Data Exchange Agreement plus an annual license fee documented at **~$25K per interface per year**.
+  RealPage requires certification for every RPX AppPartner *and* Registered Vendor (best case for a
+  new vendor is approval scoped to named customers who must sponsor it first). Entrata's API is
+  partner-gated. The company is a new LLC with zero customers and fails Yardi's first two criteria
+  outright.
+- **Reason**: Circular gate — you need customers to get the integration, and the integration is what
+  the prospect is asking for. Every small valet trash vendor faces this. Discovered while researching
+  the sales-script build (2026-08-21).
+- **Alternatives Considered**: Building against an unofficial/scraped surface — rejected; it breaks
+  on their release cycle and would be a bluffed capability in a sales conversation, which is the
+  fastest way to become "the last vendor who burned us."
+- **Impact**: **Sales answer is an honest no**, on the same pattern as "does it talk to Housecall
+  Pro?" in the home-services script — say no plainly, then say what they *do* get. What the PM
+  actually means is an AP question ("am I re-keying your invoice, will it reconcile to my rent
+  roll?"), so the real deliverable is a **monthly property invoice + per-unit backup file**, not an
+  API. That build is **on hold** pending the pricing-model answer from Reggie (below). One known
+  schema gap when it proceeds: there is **no external reference field** — a reconcilable file must
+  carry the property's own unit/tenant code (Yardi `tcode`, RealPage resident ID, Entrata lease ID),
+  not our UUIDs, so a nullable `external_ref` on `units` / `resident_units` is required.
+
+### 2026-08-21
+- **Decision**: **OPEN QUESTION, blocking** — does `properties.monthly_fee_per_door` ($25.00 default)
+  represent what the **property pays us**, or the **resident-facing fee the property passes through**?
+  `current_state.md` currently defines "PM contract estimate = billable doors × monthly_fee_per_door",
+  i.e. the property pays us $25/door.
+- **Reason**: Market research (2026-08-21) puts the vendor rate at **$8–15/unit/month** ($12–18 for
+  small communities) with **residents charged $25–35**. The property's entire business case for valet
+  trash is that spread — a worked industry example is 100 units at $12/unit cost against $25/unit
+  collected, netting $1,300/month. At $25/door billed to the property we are **2–3× the going vendor
+  rate and we erase their profit center**, which makes the value conversation unwinnable.
+- **Impact**: Blocks (a) the sales script's economics section, (b) the billing-export build above —
+  under a resident-direct-billing model the property needs no billing file at all, only a service
+  report. Reggie is being asked. Also flag for that conversation: the **85% minimum billable
+  occupancy** term is defensible but is a live objection ("I'm not paying for empty units") and needs
+  a scripted answer.

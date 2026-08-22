@@ -13,3 +13,6 @@ pm-session-compact.json
 # Tool caches
 .playwright-mcp/
 .superpowers/
+
+# macOS
+.DS_Store

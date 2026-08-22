@@ -6,7 +6,7 @@
 > Email confirmation is off (signup is gated by invite codes instead), so accounts work
 > immediately. Password policy: min 8 chars, upper + lower + digit + symbol.
 
-App runs at: `http://localhost:8091` (this PC). iPad on same Wi-Fi: `http://<PC-IPv4>:8091`. Marketing site is **https://relaxlivingvalet.com** (not the app).
+App runs at: `http://localhost:8091` (this PC). iPad on same Wi-Fi: `http://<PC-IPv4>:8091`. Marketing site is **https://relaxedlivingvalet.com** (not the app).
 
 ---
 
@@ -66,5 +66,5 @@ Admin Portal (`AdminDashboardScreen`) is reached from **Owner → More → Admin
 
 - Supabase email confirmation is **disabled** — accounts work immediately after creation.
 - Password reset: "Forgot password?" on login or "Change Password" in profile tabs.
-- Site URL: `http://localhost:8091` (keep for local; later add `https://relaxlivingvalet.com` as Redirect URL, do not drop localhost until the app is hosted).
+- Site URL: `http://localhost:8091` (keep for local; later add `https://relaxedlivingvalet.com` as Redirect URL, do not drop localhost until the app is hosted).
 - Property Manager = apartment office; Owner = Relaxed Living.

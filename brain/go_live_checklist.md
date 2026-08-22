@@ -26,9 +26,9 @@ Protects *you* as the company. Prefer lawyer-reviewed templates.
 | 3 | General liability + E&O insurance | [ ] |
 | 4 | Property management agreements (per complex) | [ ] |
 | 5 | Worker / contractor agreements | [ ] |
-| 6 | **Privacy Policy** published at public URL | [ ] (site live: relaxlivingvalet.com) |
+| 6 | **Privacy Policy** published at public URL | [ ] (site live: relaxedlivingvalet.com) |
 | 7 | **Terms of Service** published at public URL | [ ] |
-| 8 | Support / contact page; cookie notice if marketing site | [ ] site: **https://relaxlivingvalet.com** |
+| 8 | Support / contact page; cookie notice if marketing site | [ ] site: **https://relaxedlivingvalet.com** |
 
 **First technical step after (or parallel):** apply migrations `012` → `013` → `014` on hosted Supabase.
 
