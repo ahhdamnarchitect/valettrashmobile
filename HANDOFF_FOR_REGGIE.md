@@ -19,6 +19,7 @@ to approve you).
 | # | Step | Cost | Time | Why now |
 |---|---|---|---|---|
 | 1 | Merge the finished work | free | 5 min | Everything else builds on it |
+| 1b | Run one database update | free | 5 min | Fixes the price the app quotes properties |
 | 2 | Connect Stripe (payments) | free to set up | 45 min | Residents can't buy pickups without it |
 | 3 | Connect email | free–$20/mo | 30 min | Password resets barely work without it |
 | 4 | Join Apple Developer | **$99/year** | 30 min + 1–2 day wait | Needed to put the app on iPhones |
@@ -41,6 +42,27 @@ approval. Nothing is live until it's merged.
 
 > Not sure? Ask Adam to do this one. It's the only step where a wrong click is
 > annoying to undo.
+
+---
+
+## Step 1b — Run one database update  *(5 minutes, free)*
+
+The app had the wrong price built into it. It assumed **$25 per door** — that's what
+*residents* pay, not what a property pays you. Left alone, the app would quote every new
+property about $7–10 per door too high and wipe out their profit, which is the main reason
+they say yes. It's now set to **$18** (your month-to-month rate). This runs that change on
+the live database.
+
+1. Go to **https://supabase.com/dashboard/project/immiejqvnucndjspacwv**
+2. Left sidebar → **SQL Editor** → **New query**
+3. In the repo, open the file
+   `supabase/migrations/20260516000032_correct_monthly_fee_per_door_default.sql`
+   and copy everything in it.
+4. Paste it into the SQL editor and click **Run**.
+
+✅ **Done when:** it says *"Success. No rows returned"* — that's the expected result.
+
+> Nothing breaks if you run it twice. If you'd rather not touch SQL, ask Adam — it's 30 seconds.
 
 ---
 
@@ -200,6 +222,46 @@ Anything that misbehaves — screenshot it and send it to Adam.
   Connect button. *(About 5 minutes. Ask Adam to confirm it took effect.)*
 - **The old Supabase project has security holes** that were fixed in the new one. If
   you're not using it any more, delete it. If you are, tell Adam so he can patch it.
+
+---
+
+## Your sales tools — separate from the app
+
+The app is one half of this. The other half is selling it, and those materials now live in
+the repo too, under **`brain/sales/`**. They are plain files you can read — nothing to install.
+
+| File | What it's for |
+|---|---|
+| **`brain/sales/offer.md`** | Your pricing, who to target and who to skip, service terms, what's in each contract. **Start here.** |
+| **`brain/sales/sales-script.md`** | What to actually say — walking into a leasing office, or on the phone. Every objection you'll hear and the answer to it. |
+| **`brain/sales/pitch-practice.md`** | A practice partner. Paste it into ChatGPT's voice mode and it role-plays a skeptical property manager so you can rehearse. |
+| **`brain/sales/roleplay-project-instructions.txt`** | The same thing, condensed — this is the one to paste. |
+| **`brain/sales/call-card.html`** | The tap-through card for your phone (below). |
+
+### Make your own call card  *(1 minute)*
+
+The call card — the **Breezeway Board** — is a webpage you tap through while you're standing
+outside a leasing office. Tap "we're under contract," it shows you exactly what to say.
+
+Adam published a copy inside **his** Claude account, which you can't open. **You need to make
+your own copy.** Do this:
+
+1. Open Claude and either connect this repo, or open `brain/sales/call-card.html` and copy
+   everything in it.
+2. Paste this to Claude:
+
+   > *"I've attached (or pasted) an HTML file called call-card.html. Please publish it as an
+   > artifact exactly as-is, without changing the content. Title it "Breezeway Board". Then
+   > give me the link so I can bookmark it on my phone."*
+
+3. Open the link on your phone and add it to your home screen.
+
+Do this again any time the script changes, so your card doesn't go stale.
+
+> ⚠️ **One number to confirm before you use any of this.** The script quotes **$18 a door
+> month-to-month, $15 on a three-year**. You told Adam "$15 to $18" — the split is his
+> recommendation, not your decision yet. Tell him which you want and he'll update everything
+> in one place.
 
 ---
 

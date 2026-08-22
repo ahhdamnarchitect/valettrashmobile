@@ -1,5 +1,52 @@
 # Next Steps
 
+> ## 👋 START HERE — Reggie, read this first
+>
+> If you just pulled this repo and asked an AI to catch you up, this box is the summary.
+>
+> **What's left to launch the app** — all of it is yours to do, none of it is code:
+> 1. **Run migration `032`** in the Supabase SQL editor (fixes the per-door price — details below)
+> 2. **Merge the open pull request** if one is still sitting there
+> 3. **Connect Stripe** — secrets + webhook endpoint (`brain/stripe_setup.md`)
+> 4. **Connect email (SMTP)** so password resets work
+> 5. **Join Apple Developer** ($99/yr) and test on a real phone via TestFlight
+> 6. **Publish Privacy Policy + Terms** on relaxedlivingvalet.com
+> 7. **Connect the GitHub integration** — only you can do this, it's your account
+>
+> The friendly step-by-step version of 2–5 is **`HANDOFF_FOR_REGGIE.md`** in the repo root
+> (also a PDF). The full detail is below in this file.
+>
+> ### 🗣️ Your sales tools live in `brain/sales/`
+>
+> These are new. They're for selling, not for the app:
+>
+> | File | What it's for |
+> |---|---|
+> | **`brain/sales/offer.md`** | Your pricing, who to target, service terms, contract structure. **Read this one first.** |
+> | **`brain/sales/sales-script.md`** | What to say — walking into a leasing office, or on the phone. Objections and answers. |
+> | **`brain/sales/pitch-practice.md`** | Practice partner. Paste it into ChatGPT voice mode and it role-plays a property manager. |
+> | **`brain/sales/roleplay-project-instructions.txt`** | Same thing, shorter — the one to actually paste. |
+> | **`brain/sales/call-card.html`** | The tap-through card for your phone. See below. |
+>
+> ### 📱 Set up your call card ("Breezeway Board")
+>
+> The call card is a webpage you tap through while you're standing outside a leasing office.
+> Adam published a copy in **his** Claude account, which you can't open. **You need to make your
+> own.** It takes about a minute:
+>
+> 1. Open Claude, and either connect this repo or open `brain/sales/call-card.html` and copy
+>    everything in it.
+> 2. Paste this to Claude:
+>
+> > *"I've attached (or pasted) an HTML file called call-card.html. Please publish it as an
+> > artifact exactly as-is, without changing the content. Title it "Breezeway Board". Then give
+> > me the link so I can bookmark it on my phone."*
+>
+> 3. Save the link to your phone's home screen. That's it.
+>
+> Re-do this any time the script changes, so the card doesn't go stale.
+
+
 ## ✅ Supabase project switch — COMPLETE (2026-08-19)
 
 Live on the dedicated project **`immiejqvnucndjspacwv`**. Schema applied, security audited,
@@ -202,8 +249,14 @@ Note: `/auth/v1/recover` returns **200**, so the password-reset path *is* wired.
 Earlier notes calling that flow "not exercised" were too broad — what is unverified is
 email **delivery** and the deep link opening the app, which needs SMTP.
 
-### Remaining — owner action only### Remaining — owner action only (I can't do these)
+### Remaining — owner action only (I can't do these)
 
+- [ ] 🔴 **Run migration `032` on the hosted database** — corrects the per-door contract rate
+      default from `$25.00` to `$18.00`. Until this runs, the live DB still quotes new properties
+      at the resident-facing price (~$7–10/door above what we actually sell) and wipes out the
+      property's margin. Supabase → SQL Editor → paste
+      `supabase/migrations/20260516000032_correct_monthly_fee_per_door_default.sql` → Run.
+      *(If the GitHub integration gets connected first, this applies automatically instead.)*
 - [ ] **Set the Stripe secrets** on the new project: `STRIPE_SECRET_KEY`,
       `STRIPE_WEBHOOK_SECRET`, `APP_ORIGIN` (Edge Functions → Secrets). Both functions are
       deployed and currently return a graceful `503 "Stripe is not configured"`. Needs the

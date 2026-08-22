@@ -1,6 +1,6 @@
 # Handoff — Relaxed Living Valet (for Claude / ChatGPT / other AI)
 
-**Updated:** 2026-08-18  
+**Updated:** 2026-08-21  
 **Repo:** https://github.com/relaxedlivingvalet/valettrashmobile (`main`)  
 **Local path:** `C:\Users\WeLovePQ\Desktop\CascadeProjects\windsurf-project`  
 **App (dev):** http://localhost:8091 (PC only; iPad same Wi-Fi → `http://<PC-IPv4>:8091`)  
@@ -13,7 +13,7 @@ Copy this whole file into a new Claude or ChatGPT chat to resume work. Prefer al
 ## How to use this handoff
 
 1. Paste this document as the first message (or system context).
-2. Ask the AI to: read `brain/current_state.md`, `brain/next_steps.md`, `brain/go_live_checklist.md` if it has repo access.
+2. Ask the AI to: read `brain/current_state.md`, `brain/next_steps.md`, `brain/go_live_checklist.md` if it has repo access. For **sales/pricing** questions it should read `brain/sales/offer.md` first — that is the source of truth for what the property pays, what residents pay, and the contract terms.
 3. State the goal (e.g. “apply RLS migrations”, “wire Stripe”, “demo property setup”).
 4. Do **not** invent schema — use migrations in `supabase/migrations/`.
 5. Do **not** put `service_role` in the Flutter client — anon key only.
@@ -138,7 +138,28 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 | Workforce | `core/workforce/clock_hours.dart`, `om_workforce_screen.dart`, `owner_workforce_screen.dart` |
 | Owner ↔ Admin switch | `owner/widgets/owner_admin_switch_bar.dart` |
 | Migrations | `supabase/migrations/012`–`014_*.sql` |
-| Plans | `brain/go_live_checklist.md`, `brain/next_steps.md`, `brain/current_state.md` |
+| Plans | `brain/go_live_checklist.md`, `brain/next_steps.md` (**START HERE box at top**), `brain/current_state.md` |
+| Owner's guide | `HANDOFF_FOR_REGGIE.md` (repo root) — plain-English steps, no code |
+| **Sales** | `brain/sales/offer.md` (pricing source of truth), `sales-script.md`, `pitch-practice.md`, `roleplay-project-instructions.txt`, `call-card.html` |
+
+---
+
+## Selling the service — `brain/sales/` (added 2026-08-21)
+
+Separate from the app. **`offer.md` is the source of truth for pricing and terms** — read it
+before quoting any number, and change it there first, then propagate.
+
+- **Model:** the property pays RLV **$15–18/door/month**; the property bills its own residents
+  **$25–35** and keeps the spread. That spread is why a property manager says yes.
+- **Contracts:** month-to-month (30-day out, no fee) and 36-month (liquidated damages, 10%/yr
+  escalator). The month-to-month is the strongest asset in the offer — no national matches it.
+- **Files:** `offer.md`, `sales-script.md` (walk-in + cold-call spines, objections),
+  `pitch-practice.md` + `roleplay-project-instructions.txt` (ChatGPT-voice practice partner),
+  `call-card.html` (the "Breezeway Board" tap-through card — **each person publishes their own
+  artifact copy**; the prompt to do that is in the START HERE box of `next_steps.md`).
+- **Do not claim** any property count or reference (there are none yet), or any Yardi / RealPage /
+  Entrata integration — we are ineligible to build one, see `decisions.md` (2026-08-21).
+- ⚠️ The script's **$18 / $15 split is Adam's recommendation, not Reggie's confirmed number.**
 
 ---
 
@@ -154,6 +175,12 @@ Open http://localhost:8091 — hard refresh or `R` after code changes.
 ---
 
 ## Ordered next work (priority)
+
+### Do first
+0. 🔴 **Run migration `20260516000032_correct_monthly_fee_per_door_default.sql`** on the hosted
+   project. The per-door contract rate defaulted to `$25.00`, which is the *resident* price, not
+   the rate a property pays us ($15–18). Until it runs, the live DB quotes every new property
+   ~$7–10/door too high. Repo + provision path + Flutter fallback are already corrected.
 
 ### For apartment demos (this month)
 1. Rehearse all roles on localhost:8091; iPad = same Wi-Fi + PC LAN IP (not localhost, not the marketing site)
@@ -196,7 +223,11 @@ After meaningful work: update `current_state.md`, append `change_log.md`, update
 
 ## Suggested first prompt for Claude / ChatGPT
 
-> You are helping finish Relaxed Living Valet (Flutter + Supabase). Read the handoff above. Current goal: [APPLY MIGRATIONS 012-014 / DEMO PROPERTY SETUP / STRIPE PLAN / PRIVACY POLICY DRAFT]. Follow existing patterns; do not invent new roles or billing rules. Prefer minimal targeted changes. Update brain files when done.
+> You are helping finish Relaxed Living Valet (Flutter + Supabase). Read the handoff above. Current goal: [RUN MIGRATION 032 / APPLY MIGRATIONS 012-014 / DEMO PROPERTY SETUP / STRIPE PLAN / PRIVACY POLICY DRAFT]. Follow existing patterns; do not invent new roles or billing rules. Prefer minimal targeted changes. Update brain files when done.
+
+**If the owner just wants to know what's left**, use this one instead:**
+
+> Read `brain/next_steps.md` (the START HERE box at the top), `brain/current_state.md`, and `HANDOFF_FOR_REGGIE.md`. Tell me in plain English what I still have to do myself, in order, and where my sales files are. Don't write any code.
 
 ---
 

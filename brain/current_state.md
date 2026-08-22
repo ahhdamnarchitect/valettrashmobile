@@ -4,7 +4,7 @@
 **Backend is done and audited (2026-08-19).** Live on the dedicated Supabase project
 `immiejqvnucndjspacwv`: 33 tables, RLS on **all** of them, 122 policies, **0 Security Advisor
 errors**, both Edge Functions deployed, all 7 demo accounts verified logging in with each role
-correctly scoped. Repo migrations through **025**.
+correctly scoped. Repo migrations through **032**.
 
 Ten migrations (`016`–`025`) fixed four latent defects that had been in the repo since the
 beginning plus six security/access findings — including a **confirmed data leak** (`audit_logs`
@@ -29,17 +29,22 @@ integration re-link, custom SMTP. See `brain/next_steps.md`. Master plan:
 
 Blockers: hosted 012–014 not applied (Advisor: ~24 RLS-off issues); Stripe secrets/webhook still owner action; no Mac for TestFlight; Privacy/Terms not published yet; business bank for Stripe live.
 
-### 💰 Pricing model — ANSWERED 2026-08-21 (and the app disagrees with it)
+### 💰 Pricing model — ANSWERED 2026-08-21, code corrected, **migration not yet applied**
 
 Reggie confirmed the model: **the property pays Relaxed Living Valet, and the property bills its
 residents.** His rate is **$15–18/door/month**; residents are charged **$25–35** by the property,
 which keeps the spread. Full offer terms: **`brain/sales/offer.md`**.
 
-> 🔴 **The app still says $25.** `properties.monthly_fee_per_door` defaults to **`25.00`**
-> (`20260516000010_property_billing_metrics.sql`), and this file defines "PM contract estimate =
-> billable doors × `monthly_fee_per_door`". That default is now known to be **wrong by $7–10 a
-> door** — it would quote every new property well above what Reggie actually sells. **Needs a
-> migration to change the default, and any existing property rows checked.** Not done yet.
+> ✅ **Fixed in the repo 2026-08-21 — but NOT yet applied to the live database.** The default was
+> `25.00`, which conflated the resident-facing fee with the rate the property pays us and would
+> have quoted every new property ~$7–10/door too high. Corrected to **`18.00`** (the
+> month-to-month rate; 15.00 on a 36-month term is set per property) in **three** places:
+> migration **`20260516000032_correct_monthly_fee_per_door_default.sql`**,
+> `supabase/provision/part3_features_and_rls.sql` (fresh-provision path), and
+> `PropertyBilling.defaultMonthlyFeePerDoor` in the Flutter app.
+>
+> 🔴 **Owner action: migration 032 still has to be run on the hosted project.** Until then the live
+> DB still defaults to 25.00. See `brain/next_steps.md`.
 
 Two smaller items the answer surfaced, both unresolved:
 - **`minimum_billable_occupancy_percent` (default 0.85)** appears in the app but in **neither
@@ -96,7 +101,7 @@ App: **http://localhost:8091** (this PC only). iPad on same Wi-Fi: `http://<this
 | `007_service_requests` | `007_service_requests.sql` | `service_requests` + owner role |
 | `resident_comeback_balance_service_time` | `008_...sql` | `purchased_comeback_balance`, `preferred_time` |
 | `staff_invites` | `009_staff_invites.sql` | Staff self-signup RPCs |
-| `property_billing_metrics` | `010_property_billing_metrics.sql` | `monthly_fee_per_door` (default $25), `minimum_billable_occupancy_percent` (default 0.85) |
+| `property_billing_metrics` | `010_property_billing_metrics.sql` | `monthly_fee_per_door` (default now **$18** — see migration 032), `minimum_billable_occupancy_percent` (default 0.85) |
 | `property_door_counts` | `011_property_door_counts.sql` | `billing_total_doors`, `billing_occupied_doors` (manual entry per complex) |
 | `workforce_labor` | `012_workforce_labor.sql` | `users.hourly_rate`, clock_events/worker_locations RLS, `set_worker_hourly_rate` RPC — **not applied hosted** |
 | `unify_owner_role` | `013_unify_owner_role.sql` | `relaxedlivingtx@gmail.com` → `owner`; optional `+owner` alias — **not applied hosted** |

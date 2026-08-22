@@ -10,7 +10,7 @@ Either connect the GitHub integration (below), or run `supabase/provision/`
 parts 1 → 2 → 3 → 4a → 4 → 5 → 6 in the SQL editor. Parts 1 and 2 must be separate
 executions — see the enum note.
 
-## The chain (31 migrations)
+## The chain (32 migrations)
 
 | Version | What |
 |---|---|
@@ -45,6 +45,7 @@ executions — see the enum note.
 | `20260516000029` | `pm_access_via_user_properties` |
 | `20260516000030` | `pm_has_unit_role_guard` |
 | `20260516000031` | `rls_initplan_optimization` |
+| `20260516000032` | `correct_monthly_fee_per_door_default` |
 
 ## Two structural rules this layout enforces
 

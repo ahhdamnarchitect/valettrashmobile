@@ -5,6 +5,42 @@ Date | Change | Files Modified | Reason
 
 ---
 
+### 2026-08-21 — Per-door rate default corrected ($25 → $18); owner onboarding wired to the sales assets
+
+- **Migration `20260516000032_correct_monthly_fee_per_door_default.sql`.** The per-door contract
+  rate defaulted to **`25.00`**, which is the *resident-facing* price, not the rate a property pays
+  us ($15–18). Every new property row would have been quoted ~$7–10/door too high — erasing the
+  property's margin, which is the entire reason a property manager buys valet trash. Default is now
+  **`18.00`** (month-to-month rate; the 36-month rate of 15.00 is set per property). The migration
+  also re-points existing rows, scoped to `WHERE monthly_fee_per_door = 25.00` so a deliberately-set
+  rate is never clobbered — safe because no property is signed yet.
+
+  The same wrong default lived in **three** places; all three are fixed:
+  | Where | Change |
+  |---|---|
+  | `supabase/migrations/20260516000032_*.sql` | new — `SET DEFAULT 18.00` + row update + column comment |
+  | `supabase/provision/part3_features_and_rls.sql` | fresh-provision path, `DEFAULT 25.00` → `18.00` |
+  | `mobile/lib/core/billing/property_billing.dart` | `defaultMonthlyFeePerDoor` 25.0 → 18.0 (fallback when the DB value is absent) |
+
+  No test asserted the old constant; `dart analyze` clean on the changed file.
+  🔴 **Not yet applied to the hosted database — owner action.** `supabase/MIGRATIONS.md` chain
+  updated to 32.
+
+- **Owner onboarding now points at everything.** So that pulling the repo and asking an AI to
+  "catch me up" actually surfaces the remaining work and the sales tools:
+  - **`brain/next_steps.md`** — added a **START HERE** box at the very top: the seven remaining
+    owner-action steps, where the sales files are, and a copy-paste prompt for publishing his own
+    call-card artifact. Also fixed a duplicated section heading.
+  - **`HANDOFF_FOR_REGGIE.md`** — added **Step 1b** (run migration 032, with click-by-click SQL
+    editor instructions) and a **"Your sales tools"** section including the artifact prompt.
+  - **`CLAUDE.md`** — added pointers for "owner asking what's left" and for `brain/sales/`.
+  - **`brain/handoff_for_external_ai.md`** — added a sales section, migration 032 as step 0, the
+    sales files to Important files, and a second suggested prompt for the plain-English catch-up.
+
+- **The call card is per-person.** Adam's published artifact lives in his own Claude account and
+  Reggie cannot open it. The prompt to publish his own copy is now in three places (START HERE box,
+  `HANDOFF_FOR_REGGIE.md`, external-AI handoff).
+
 ### 2026-08-21 — Sales assets built (`brain/sales/`); pricing model answered
 
 - **Pricing model resolved.** Reggie confirmed: **the property pays RLV, the property bills its

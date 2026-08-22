@@ -16,6 +16,21 @@ Also available: `architecture.md`, `change_log.md`, `cheat_sheet.md`.
 
 If the code and `current_state.md` disagree, say so — do not silently pick one.
 
+### If the owner (Reggie) is asking "what's left?" or "catch me up"
+
+Point him at the **START HERE** box at the top of `brain/next_steps.md`, and at
+`HANDOFF_FOR_REGGIE.md` in the repo root for the friendly step-by-step version. Everything
+outstanding is owner action — accounts, keys, and one SQL migration — not code.
+
+### Selling the service — `brain/sales/`
+
+Separate from the app. `brain/sales/offer.md` is the **source of truth for pricing and terms**
+(what the property pays, what residents pay, contract structure) — read it before quoting any
+number, and change it there first, then propagate to `sales-script.md` and `call-card.html`.
+Also: `sales-script.md`, `pitch-practice.md` + `roleplay-project-instructions.txt` (ChatGPT-voice
+practice partner), and `call-card.html` (the "Breezeway Board" tap-through card — **each person
+publishes their own artifact copy**; see the START HERE box in `next_steps.md`).
+
 ## Write after
 
 When you finish meaningful work, update `brain/current_state.md` and

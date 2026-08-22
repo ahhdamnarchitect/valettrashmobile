@@ -1,7 +1,12 @@
 /// Property occupancy + billable-door rules (85% minimum for PM contracts).
 abstract final class PropertyBilling {
   static const double defaultMinimumBillablePercent = 0.85;
-  static const double defaultMonthlyFeePerDoor = 25.0;
+
+  /// What the PROPERTY pays us per billable door, month to month. Not the
+  /// resident-facing $25-35 -- the property bills its residents itself and keeps
+  /// the spread. Fallback only; the real rate lives on `properties`.
+  /// Mirrors the DB default set in migration 20260516000032.
+  static const double defaultMonthlyFeePerDoor = 18.0;
 
   /// Doors the property pays for: at least [minPercent] of total units, or
   /// actual occupied count if higher.
